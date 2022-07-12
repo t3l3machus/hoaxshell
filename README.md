@@ -18,5 +18,14 @@ https://www.youtube.com/
   
 Find more screenshots [here](Screenshots/).
 
+## Installation
+```
+git clone https://github.com/t3l3machus/hoaxshell
+cd ./hoaxshell
+sudo pip3 install -r requirements.txt
+chmod +x hoaxshell.py
+```
+
+## Usage
 
 
