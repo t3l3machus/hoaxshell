@@ -6,7 +6,7 @@
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 ## Purpose
 
-hoaxshell is a non-traditional Windows reverse shell, currently undetected by Microsoft Defender and other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
+hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
   
 **Disclaimer**: The project is quite fresh and has not been widely tested.  
   
