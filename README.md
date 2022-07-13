@@ -6,7 +6,7 @@
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 ## Purpose
 
-hoaxshell is a non-traditional windows reverse shell (PowerShell), currently undetected by Microsoft Defender and most other AV solutions, as it is solely based on http/https traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
+hoaxshell is a non-traditional Windows reverse shell, currently undetected by Microsoft Defender and other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
   
 **Disclaimer**: The project is quite fresh and has not been widely tested.  
   
@@ -50,5 +50,10 @@ sudo python3 hoaxshell.py -s <your_ip> -g
 ```  
 **Important**: Make sure to start hoaxshell with the same settings as the session you are trying to restore (http/https, port, etc).
 
+## Limitations
+The shell will die if you submit a command that initiates an interactive 
+
+## How it Works
+The attacker issued commands are basically hosted via http/https (python HTTPServer). The generated payload submits the victim's machine into a loop that periodically requests the commands from the attacker's malicious http(s) server, executes them and then sends the output back to the malicious server via POST requests.
 
 
