@@ -52,7 +52,21 @@ sudo python3 hoaxshell.py -s <your_ip> -g
 **Important**: Make sure to start hoaxshell with the same settings as the session you are trying to restore (http/https, port, etc).
 
 ## Limitations
-The shell will die if you submit a command that initiates an interactive 
+The shell is going to hang if you execute a command that initiates an interactive session. Example:  
+```
+# this command will execute succesfully and you will have no problem: 
+> powershell echo 'This is a test'
+
+# But this one will open an interactive session within the hoaxshell session and is going to cause the shell to hang:
+> powershell
+
+# In the same manner, you won't have a problem executing this:
+> cmd /c dir /a
+
+# But this will cause your hoaxshell to hang:
+cmd.exe
+```
+Long story short, you have to be careful to not run an exe or cmd that starts an interactive session within the hoaxshell powershell context.
 
 
 ## How it Works
