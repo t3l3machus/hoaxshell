@@ -15,9 +15,6 @@ from ipaddress import ip_address
 
 filterwarnings("ignore", category = DeprecationWarning) 
 
-# Generate self-signed certificate (bash):
-# openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
-
 ''' Colors '''
 MAIN = '\033[38;5;50m'
 PLOAD = '\033[38;5;119m'
@@ -170,7 +167,6 @@ def chill():
 # ------------------ Settings ------------------ #
 prompt = "hoaxshell > "
 quiet = True if args.quiet else False
-ignore = True if not args.ignore else False
 frequency = args.frequency if args.frequency else 0.8
 stop_event = Event()
 
