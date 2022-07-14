@@ -27,7 +27,7 @@ chmod +x hoaxshell.py
 ```
 
 ## Usage
-#### Basic (shell session over http)
+#### Basic shell session over http
 ```
 sudo python3 hoaxshell.py -s <your_ip>
 ```  
