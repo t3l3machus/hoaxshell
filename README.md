@@ -53,6 +53,7 @@ sudo python3 hoaxshell.py -s <your_ip> -g
 ## Limitations
 The shell will die if you submit a command that initiates an interactive 
 
+
 ## How it Works
 The attacker issued commands are basically hosted via http/https (python HTTPServer). The generated payload submits the victim's machine into a loop that periodically requests the commands from the attacker's malicious http(s) server, executes them and then sends the output back to the malicious server via POST requests.
 
