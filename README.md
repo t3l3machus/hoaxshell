@@ -14,9 +14,9 @@ So far, it has been tested on fully updated Windows 10 Pro and Windows 11 Enterp
 https://www.youtube.com/
 
 ## Screenshots
-![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/Screenshots/hoaxshell-1.png)
+![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/screenshots/hoaxshell-win11.png)
   
-Find more screenshots [here](Screenshots/).
+Find more screenshots [here](screenshots/).
 
 ## Installation
 ```
