@@ -1,5 +1,6 @@
 #!/bin/python3
 # 
+# Version: 1.0
 # Written by Panagiotis Chartas (t3l3machus)
 # https://github.com/t3l3machus
 
@@ -45,6 +46,7 @@ parser.add_argument("-p", "--port", action="store", help = "Your Hoaxshell serve
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s)", type = float)
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
+parser.add_argument("-i", "--ignore", action="store_true", help = "By default, hoaxshell ignores bytes that raise exceptions during decoding of output data. This argument disables the feature, usefull when you are dealing with exotic languages output data.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup")
 
 args = parser.parse_args()
@@ -168,6 +170,7 @@ def chill():
 # ------------------ Settings ------------------ #
 prompt = "hoaxshell > "
 quiet = True if args.quiet else False
+ignore = True if not args.ignore else False
 frequency = args.frequency if args.frequency else 0.8
 stop_event = Event()
 
@@ -285,7 +288,10 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			output = self.rfile.read(content_len)
 			
 			try:
-				output = output.decode('utf-8', 'ignore') 
+				bin_output = output.decode('utf-8').split(' ')
+				to_b_numbers = [ int(n) for n in bin_output ]
+				b_array = bytearray(to_b_numbers)
+				output = b_array.decode('utf-8', 'ignore')
 				
 			except UnicodeDecodeError:
 				print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
