@@ -44,8 +44,8 @@ sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pe
 ```  
 The generated PowerShell payload will be longer in length because it includes an additional block of code that disables the ssl certificate validation.
 
-#### Restore session mode
-In case you close your terminal accidentally, have a power outage or something, you can start hoaxshell in restore mode, it will attempt to re-establish a session, given that the payload is still running on the victim machine.
+#### Grab session mode
+In case you close your terminal accidentally, have a power outage or something, you can start hoaxshell in grab session mode, it will attempt to re-establish a session, given that the payload is still running on the victim machine.
 ```
 sudo python3 hoaxshell.py -s <your_ip> -g
 ```  
