@@ -1,19 +1,20 @@
 #!/bin/python3
 # 
-# Version: 1.0
 # Written by Panagiotis Chartas (t3l3machus)
 # https://github.com/t3l3machus
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import ssl, sys, argparse, base64, os, readline, uuid, re
+import ssl, sys, argparse, base64, readline, uuid, re
+from os import system, path
 from warnings import filterwarnings
 from datetime import date, datetime
 from IPython.display import display
 from threading import Thread, Event
 from time import sleep
 from ipaddress import ip_address
+from subprocess import check_output
 
-filterwarnings("ignore", category = DeprecationWarning) 
+filterwarnings("ignore", category = DeprecationWarning)
 
 ''' Colors '''
 MAIN = '\033[38;5;50m'
@@ -34,7 +35,22 @@ FAILED = f'{RED}Fail{END}'
 DEBUG = f'{ORANGE}Debug{END}'
 
 # -------------- Arguments & Usage -------------- #
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+	formatter_class=argparse.RawTextHelpFormatter,
+	epilog='''
+Usage examples:
+
+  Basic shell session over http:
+  
+      sudo python3 hoaxshell.py -s <your_ip>
+	
+  Encrypted shell session (https):
+  
+      openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
+      sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
+  
+'''
+	)
 
 parser.add_argument("-s", "--server-ip", action="store", help = "Your Hoaxshell server ip address", required = True)
 parser.add_argument("-c", "--certfile", action="store", help = "Path to your ssl certificate.")
@@ -43,14 +59,46 @@ parser.add_argument("-p", "--port", action="store", help = "Your Hoaxshell serve
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s)", type = float)
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
-parser.add_argument("-i", "--ignore", action="store_true", help = "By default, hoaxshell ignores bytes that raise exceptions during decoding of output data. This argument disables the feature, usefull when you are dealing with exotic languages output data.")
+parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup")
 
 args = parser.parse_args()
 
+
+# Update utility
+if args.update:
+	
+	updated = False
+
+	try:
+		cwd = path.dirname(path.abspath(__file__))
+		print(f'[{INFO}] Pulling changes from the master branch...')
+		u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/hoaxshell main', shell=True).decode('utf-8')
+
+		if re.search('Updating', u):					
+			print(f'[{INFO}] Update completed! Please, restart hoaxshell.')
+			updated = True
+			
+		elif re.search('Already up to date', u):
+			print(f'[{INFO}] Already running the latest version!')
+			pass
+			
+		else:
+			print(f'[{FAILED}] Something went wrong. Are you running hoaxshell from your local git repository?')
+			print(f'[{DEBUG}] Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+					
+	except:
+		print(f'[{FAILED}] Update failed. Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+
+	if updated:
+		sys.exit(0)
+
+
+
 def exit_with_msg(msg):
 	print(f"[{DEBUG}] {msg}")
 	sys.exit(0)
+
 
 # Check if provided ip is valid
 try:
@@ -108,7 +156,7 @@ def print_banner():
 		if charset < 2: final.append('\n   ')
 	
 	print(f"   {''.join(final)}")
-	print(f'{END}{padding}                         by t3l3machus\n')
+	print(f'{END}{padding}                        by t3l3machus\n')
 
 
 
@@ -410,7 +458,7 @@ def main():
 					promptHelpMsg()
 
 				elif user_input.lower() in ['clear']:
-					os.system('clear')
+					system('clear')
 				
 				elif user_input.lower() in ['payload']:
 					encodePayload(payload)
