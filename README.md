@@ -11,7 +11,7 @@ hoaxshell is an unconventional Windows reverse shell, currently undetected by Mi
 So far, it has been tested on fully updated **Windows 11 Enterprise** and **Windows 10 Pro** boxes (see video and screenshots).
   
 ### Video Presentation  
-Coming soon.
+https://www.youtube.com/watch?v=SEufgD5UxdU
 
 ## Screenshots
 ![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/screenshots/hoaxshell-win11.png)
