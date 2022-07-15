@@ -65,36 +65,6 @@ parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print t
 args = parser.parse_args()
 
 
-# Update utility
-if args.update:
-	
-	updated = False
-
-	try:
-		cwd = path.dirname(path.abspath(__file__))
-		print(f'[{INFO}] Pulling changes from the master branch...')
-		u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/hoaxshell main', shell=True).decode('utf-8')
-
-		if re.search('Updating', u):					
-			print(f'[{INFO}] Update completed! Please, restart hoaxshell.')
-			updated = True
-			
-		elif re.search('Already up to date', u):
-			print(f'[{INFO}] Already running the latest version!')
-			pass
-			
-		else:
-			print(f'[{FAILED}] Something went wrong. Are you running hoaxshell from your local git repository?')
-			print(f'[{DEBUG}] Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
-					
-	except:
-		print(f'[{FAILED}] Update failed. Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
-
-	if updated:
-		sys.exit(0)
-
-
-
 def exit_with_msg(msg):
 	print(f"[{DEBUG}] {msg}")
 	sys.exit(0)
@@ -400,6 +370,35 @@ class Hoaxshell(BaseHTTPRequestHandler):
 def main():
 	
 	try:
+		chill() if quiet else print_banner()
+
+		# Update utility
+		if args.update:
+			
+			updated = False
+
+			try:
+				cwd = path.dirname(path.abspath(__file__))
+				print(f'[{INFO}] Pulling changes from the master branch...')
+				u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/hoaxshell main', shell=True).decode('utf-8')
+
+				if re.search('Updating', u):					
+					print(f'[{INFO}] Update completed! Please, restart hoaxshell.')
+					updated = True
+					
+				elif re.search('Already up to date', u):
+					print(f'[{INFO}] Already running the latest version!')
+					pass
+					
+				else:
+					print(f'[{FAILED}] Something went wrong. Are you running hoaxshell from your local git repository?')
+					print(f'[{DEBUG}] Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+							
+			except:
+				print(f'[{FAILED}] Update failed. Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+
+			if updated:
+				sys.exit(0)
 
 		if ssl_support:
 			server_port = int(args.port) if args.port else 443
@@ -421,8 +420,6 @@ def main():
 				ssl_version=ssl.PROTOCOL_TLS
 			)
 		
-
-		chill() if quiet else print_banner()
 		port = f':{server_port}' if server_port != 443 else ''
 						
 		Hoaxshell_server = Thread(target = httpd.serve_forever, args = ())
