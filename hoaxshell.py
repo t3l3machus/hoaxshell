@@ -301,22 +301,25 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			content_len = int(self.headers.get('Content-Length'))
 			output = self.rfile.read(content_len)
 			
-			try:
-				bin_output = output.decode('utf-8').split(' ')
-				to_b_numbers = [ int(n) for n in bin_output ]
-				b_array = bytearray(to_b_numbers)
-				output = b_array.decode('utf-8', 'ignore')
-				
-			except UnicodeDecodeError:
-				print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
-			
-			if isinstance(output, bytes):
-				pass
-				
+			if output:
+				try:
+					bin_output = output.decode('utf-8').split(' ')
+					to_b_numbers = [ int(n) for n in bin_output ]
+					b_array = bytearray(to_b_numbers)
+					output = b_array.decode('utf-8', 'ignore')
+
+				except UnicodeDecodeError:
+					print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
+
+				if isinstance(output, bytes):
+					pass
+
+				else:
+					output = output.strip() + '\n' if output.strip() != '' else output.strip()
+					
+				print(f'\r{GREEN}{output}{END}')
 			else:
-				output = output.strip() + '\n' if output.strip() != '' else output.strip()
-				
-			print(f'\r{GREEN}{output}{END}') if output not in [None, ''] else print(f'\r{ORANGE}No output.{END}')
+				print(f'\r{ORANGE}No output.{END}')
 			
 			Hoaxshell.prompt_ready = True
 	
