@@ -397,15 +397,22 @@ def main():
 				sys.exit(0)
 
 				
-		if not args.server_ip:
+		if not args.server_ip and args.update and len(sys.argv) == 2:
+			sys.exit(0)
+
+		if not args.server_ip and args.update and len(sys.argv) > 2:
 			exit_with_msg('Local host ip not provided (-s)')
+
+		elif not args.server_ip and not args.update:
+			exit_with_msg('Local host ip not provided (-s)')
+
 		else:
 			# Check if provided ip is valid
 			try:
 				ip_object = ip_address(args.server_ip)
 
 			except ValueError:
-				exit_with_msg('IP address is not valid.')				
+				exit_with_msg('IP address is not valid.')			
 				
 				
 		if ssl_support:
