@@ -52,10 +52,10 @@ Usage examples:
 '''
 	)
 
-parser.add_argument("-s", "--server-ip", action="store", help = "Your Hoaxshell server ip address", required = True)
+parser.add_argument("-s", "--server-ip", action="store", help = "Your hoaxshell server ip address")
 parser.add_argument("-c", "--certfile", action="store", help = "Path to your ssl certificate.")
 parser.add_argument("-k", "--keyfile", action="store", help = "Path to the private key for your certificate. ")
-parser.add_argument("-p", "--port", action="store", help = "Your Hoaxshell server port (default: 8080 over http, 443 over https)", type = int) 
+parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell server port (default: 8080 over http, 443 over https)", type = int) 
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s)", type = float)
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
@@ -69,13 +69,6 @@ def exit_with_msg(msg):
 	print(f"[{DEBUG}] {msg}")
 	sys.exit(0)
 
-
-# Check if provided ip is valid
-try:
-	ip_object = ip_address(args.server_ip)
-	
-except ValueError:
-	exit_with_msg('IP address is not valid.')
 
 # Check if port is valid.
 if args.port:
@@ -403,6 +396,18 @@ def main():
 			if updated:
 				sys.exit(0)
 
+				
+		if not args.server_ip:
+			exit_with_msg('Local host ip not provided (-s)')
+		else:
+			# Check if provided ip is valid
+			try:
+				ip_object = ip_address(args.server_ip)
+
+			except ValueError:
+				exit_with_msg('IP address is not valid.')				
+				
+				
 		if ssl_support:
 			server_port = int(args.port) if args.port else 443
 		else:
