@@ -14,7 +14,7 @@ So far, it has been tested on fully updated **Windows 11 Enterprise** and **Wind
 https://www.youtube.com/watch?v=SEufgD5UxdU
 
 ## Screenshots
-![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/screenshots/hoaxshell-win11.png)
+![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/screenshots/hoaxshell-win11-v2.png)
   
 Find more screenshots [here](screenshots/).
 
