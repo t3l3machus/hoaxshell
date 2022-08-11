@@ -27,6 +27,8 @@ chmod +x hoaxshell.py
 ```
 
 ## Usage
+**Important**: As a means of avoiding detection, hoaxshell is automatically generating random values for the session id, URL paths and name of a custom http header utilized in the process, every time the script is started. The generated payload will work only for the instance it was generated for. Use the `-g` option to bypass this behaviour and re-establish an active session or reuse a past generated payload with a new instance of hoaxshell. 
+
 #### Basic shell session over http
 ```
 sudo python3 hoaxshell.py -s <your_ip>
