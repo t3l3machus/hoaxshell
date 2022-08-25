@@ -82,7 +82,7 @@ if args.port:
 if (args.certfile and not args.keyfile) or (args.keyfile and not args.certfile):
 		exit_with_msg('Failed to start over https. Missing key or cert file (check -h for more details).')
 # If not, check if SSL is requested
-if args.ssl:
+if args.ssl and not (args.certfile and args.keyfile):
 	args.keyfile,args.certfile = generate_key_and_cert.generate()
 
 ssl_support = True if args.certfile and args.keyfile else False
