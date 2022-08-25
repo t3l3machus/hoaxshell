@@ -13,6 +13,8 @@ from threading import Thread, Event
 from time import sleep
 from ipaddress import ip_address
 from subprocess import check_output
+#import from local directory
+import generate_key_and_cert
 
 filterwarnings("ignore", category = DeprecationWarning)
 
@@ -61,6 +63,7 @@ parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup")
+parser.add_argument("--ssl", action="store_true", help = "Generate a private key and self-signed certificate on-the-fly")
 
 args = parser.parse_args()
 
@@ -77,7 +80,10 @@ if args.port:
 
 # Check if both cert and key files were provided
 if (args.certfile and not args.keyfile) or (args.keyfile and not args.certfile):
-	exit_with_msg('Failed to start over https. Missing key or cert file (check -h for more details).')
+		exit_with_msg('Failed to start over https. Missing key or cert file (check -h for more details).')
+# If not, check if SSL is requested
+if args.ssl:
+	args.keyfile,args.certfile = generate_key_and_cert.generate()
 
 ssl_support = True if args.certfile and args.keyfile else False
 

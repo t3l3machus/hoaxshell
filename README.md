@@ -37,7 +37,12 @@ When you run hoaxshell, it will generate its own PowerShell payload for you to c
 
 #### Encrypted shell session (https):
 ```
-# Generate self-signed certificate:
+# Generate self-signed certificate automatically:
+sudo python3 hoaxshell.py -s <your_ip> --ssl
+
+-------------------------------------------------
+
+# Generate self-signed certificate manually:
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 
 # Pass the cert.pem and key.pem as arguments:
