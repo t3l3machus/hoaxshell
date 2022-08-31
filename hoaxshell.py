@@ -308,7 +308,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 					to_b_numbers = [ int(n) for n in bin_output ]
 					b_array = bytearray(to_b_numbers)
 					output = b_array.decode('utf-8', 'ignore')
-					tmp = output.split(Hoaxshell.output_end)
+					tmp = output.rsplit(Hoaxshell.output_end, 1)
 					output = tmp[0]
 					prompt = f"PS {tmp[-1].strip()} > "
 					prompt = "PS \\ > " if tmp[-1].strip() == '' else prompt
