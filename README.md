@@ -9,7 +9,9 @@
 hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and possibly other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it generates it's own PowerShell payload and it supports encryption (ssl).  
   
 So far, it has been tested on fully updated **Windows 11 Enterprise** and **Windows 10 Pro** boxes (see video and screenshots).
-  
+
+**Disclaimer**: Purely made for testing and educational purposes. Hopefully, countermeasures will be implemented to improve security against similar attacks.
+
 ### Video Presentation  
 https://www.youtube.com/watch?v=SEufgD5UxdU
 
