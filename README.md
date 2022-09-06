@@ -8,11 +8,11 @@
 
 ## Purpose
 
-hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and possibly other AV solutions as it is solely based on http(s) traffic. The tool is easy to use, it generates it's own PowerShell payload and it supports encryption (ssl).  
+hoaxshell is an unconventional Windows reverse shell, currently undetected by Microsoft Defender and possibly other AV solutions, solely based on http(s) traffic. The tool is easy to use, it generates it's own PowerShell payload and it supports encryption (ssl).  
   
-So far, it has been tested on fully updated **Windows 11 Enterprise** and **Windows 10 Pro** boxes (see video and screenshots).
+So far, it has been tested on fully updated **Windows 11 Enterprise**, **Windows Server 2016 Datacenter** and **Windows 10 Pro** boxes (see video and screenshots).
 
-**Disclaimer**: Purely made for testing and educational purposes. Hopefully, countermeasures will be implemented to improve security against similar attacks.
+**Disclaimer**: Purely made for testing and educational purposes. 
 
 ### Video Presentation  
 https://www.youtube.com/watch?v=SEufgD5UxdU
@@ -34,15 +34,24 @@ chmod +x hoaxshell.py
 **Important**: As a means of avoiding detection, hoaxshell is automatically generating random values for the session id, URL paths and name of a custom http header utilized in the process, every time the script is started. The generated payload will work only for the instance it was generated for. Use the `-g` option to bypass this behaviour and re-establish an active session or reuse a past generated payload with a new instance of hoaxshell. 
 
 ### Basic shell session over http
+When you run hoaxshell, it will generate its own PowerShell payload for you to copy and inject on the victim. By default, the payload is base64 encoded for convenience. If you need the payload raw, execute the "rawpayload" prompt command or start hoaxshell with the `-r` argument. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.  
+
+#### Payload that utilizes `Invoke-Expression` (default)
 ```
 sudo python3 hoaxshell.py -s <your_ip>
 ```  
-When you run hoaxshell, it will generate its own PowerShell payload for you to copy and inject on the victim. By default, the payload is base64 encoded for convenience. If you need the payload raw, execute the "rawpayload" prompt command or start hoaxshell with the `-r` argument. After the payload has been executed on the victim, you'll be able to run PowerShell commands against it.  
+
+#### Payload that writes and executes commands from a file
+Use `-x` to provide a .ps1 file name (absolute path) to be created on the victim machine. You should check the raw payload before executing, make sure the path you proveded is solid.
+```
+sudo python3 hoaxshell.py -s <your_ip> -x "C:\Users\\\$env:USERNAME\.local\hack.ps1"
+```  
 
 ### Recommended usage to avoid detection (over http)
 Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. Use -H to provide a standard or custom http header name to avoid detection.
 ```
 sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
+sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\Users\\\$env:USERNAME\.local\hack.ps1"
 ```
 
 ### Encrypted shell session (https)
@@ -94,4 +103,5 @@ Long story short, you have to be careful to not run an exe or cmd that starts an
 ## News
  - `31/08/2022` - Added the `-i` option that generates the PS payload adjusted to use "Invoke-RestMethod' instead of 'Invoke-WebRequest' utility, so now the user can choose (thanks to this [issue](https://github.com/t3l3machus/hoaxshell/issues/8)). I also fixed a bug that existed in the prompt (it sometimes messed the path).  
  - `01/09/2022` - Added the `-H` option which allows users to give a custom name to the (random by default) header utilized in the attack process, carring the shell's session id. This makes the attack less detectable e.g. by using a standard header name e.g. "Authorization".
-  - `04/09/2022` - Modifications were made to improve the command delivery mechanism as it included components that could be easily flagged. The `-t` option along with the `https_payload_trusted.ps1` were added. You can now use hoaxshell by supplying a domain name along with a trusted certificate. This will generate a shorter and less detectable https payload.
+  - `04/09/2022` - Modifications were made to improve the command delivery mechanism as it included components that could be easily flagged. The `-t` option along with the `https_payload_trusted.ps1` were added. You can now use hoaxshell by supplying a domain name along with a trusted certificate. This will generate a shorter and less detectable https payload.  
+  - `06/09/2022` - A new payload was added that writes the commands to be executed in a file instead of utilizing `Invoke-Expression`. To use this, the user must provide a .ps1 file name (absolute path) on the victim machine using the `-x` option.
