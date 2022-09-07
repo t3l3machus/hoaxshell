@@ -189,6 +189,9 @@ def checkPulse(stop_event):
 				Hoaxshell.prompt_ready = True
 				stop_event.set()
 
+		else:
+			Hoaxshell.last_received = timestamp
+			
 		sleep(5)
 
 
