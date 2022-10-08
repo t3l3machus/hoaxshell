@@ -34,8 +34,6 @@ IMPORTANT = WARN = f'{ORANGE}Important{END}'
 FAILED = f'{RED}Fail{END}'
 DEBUG = f'{ORANGE}Debug{END}'
 
-t_process = None
-
 # -------------- Arguments & Usage -------------- #
 parser = argparse.ArgumentParser(
 	formatter_class=argparse.RawTextHelpFormatter,
@@ -72,7 +70,7 @@ Usage examples:
 
 	 OR 
 
-	 sudo python3 hoaxshell.py -ng
+     sudo python3 hoaxshell.py -ng
 
 
 '''
@@ -216,6 +214,8 @@ prompt = "hoaxshell > "
 quiet = True if args.quiet else False
 frequency = args.frequency if args.frequency else 0.8
 stop_event = Event()
+t_process = None
+
 
 def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 
@@ -297,6 +297,7 @@ class Tunneling:
 
 		self.process.kill() #Terminate running tunnel process
 		print(f'\r[{WARN}] Tunnel terminated.')
+
 
 # -------------- Hoaxshell Server -------------- #
 class Hoaxshell(BaseHTTPRequestHandler):
@@ -662,7 +663,8 @@ def main():
 			
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
-			print(f'[{INFO}] Tunneling [{f"{BOLD}{ORANGE}ON{END}" if tunneling else f"{BOLD}{RED}OFF{END}"}]')
+			print(f'[{INFO}] Tunneling [{BOLD}{ORANGE}ON{END}]') if tunneling else chill()
+			
 			if tunneling:
 				print(f'[{INFO}] Server Address: {BOLD}{BLUE}{t_server}{END}')
 
