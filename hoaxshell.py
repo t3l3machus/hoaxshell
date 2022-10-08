@@ -525,14 +525,15 @@ def main():
 
 	try:
 		chill() if quiet else print_banner()
-
+		cwd = path.dirname(path.abspath(__file__))
+		
 		# Update utility
 		if args.update:
 
 			updated = False
 
 			try:
-				cwd = path.dirname(path.abspath(__file__))
+				
 				print(f'[{INFO}] Pulling changes from the master branch...')
 				u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/hoaxshell main', shell=True).decode('utf-8')
 
@@ -634,24 +635,25 @@ def main():
 			print(f'[{INFO}] Generating reverse shell payload...')
 
 			if args.localtunnel:
-				source = open('./https_payload_localtunnel.ps1',
-				              'r') if not args.exec_outfile else open('./https_payload_localtunnel_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/https_payload_localtunnel.ps1',
+				              'r') if not args.exec_outfile else open('./payload_templates/https_payload_localtunnel_outfile.ps1', 'r')
 
 			elif args.ngrok:
-				source = open('./https_payload_ngrok.ps1',
-				              'r') if not args.exec_outfile else open('./https_payload_ngrok_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/https_payload_ngrok.ps1',
+				              'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/https_payload_ngrok_outfile.ps1', 'r')
 
 			elif not ssl_support:
-				source = open('./http_payload.ps1', 'r') if not args.exec_outfile else open('./http_payload_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/http_payload.ps1', 'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/http_payload_outfile.ps1', 'r')
 			
 			elif ssl_support and args.trusted_domain:
-				source = open('./https_payload_trusted.ps1', 'r') if not args.exec_outfile else open('./https_payload_trusted_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/https_payload_trusted.ps1', 'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/https_payload_trusted_outfile.ps1', 'r')
 				
 			elif ssl_support and not args.trusted_domain:
-				source = open('./https_payload.ps1', 'r') if not args.exec_outfile else open('./https_payload_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/https_payload.ps1', 'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/https_payload_outfile.ps1', 'r')
 			
 			payload = source.read().strip()
 			source.close()
+			
 			payload = payload.replace('*SERVERIP*', (t_server if (args.localtunnel or args.ngrok) else server_ip)).replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(
 				frequency)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res).replace('*HOAXID*', Hoaxshell.header_id)
 			
