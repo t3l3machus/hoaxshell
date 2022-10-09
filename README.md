@@ -1,6 +1,6 @@
 # hoaxshell
 
-[![Python 3.x](https://img.shields.io/badge/python-3.x-yellow.svg)](https://www.python.org/) 
+[![Python](https://img.shields.io/badge/python-%E2%89%A5%203.6-yellow.svg)](https://www.python.org/) 
 <img src="https://img.shields.io/badge/powershell-%E2%89%A5%20v3.0-blue">
 [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
 [![License](https://img.shields.io/badge/license-BSD-red.svg)](https://github.com/t3l3machus/hoaxshell/blob/main/LICENSE.md)
