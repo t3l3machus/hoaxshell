@@ -600,12 +600,17 @@ def main():
 		
 		if args.localtunnel or args.ngrok:
 			tunneling = True
-
 			t_process = Tunneling(server_port) #will start tunnel process accordingly
+			
 			if args.localtunnel:
 				t_server = t_process.lt_address()
+				
 			elif args.ngrok:
 				t_server = t_process.ngrok_address()
+
+			if not t_server:
+				exit_with_msg('Failed to initiate tunnel. Possible cause: You have a tunnel agent session already running in the bg/fg.')				
+				
 
 		try:
 			httpd = HTTPServer(('0.0.0.0', server_port), Hoaxshell)
