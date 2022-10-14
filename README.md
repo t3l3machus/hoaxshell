@@ -81,7 +81,7 @@ Use any of the payload variations with the `-cm` (--constraint-mode) option to g
 ```
 sudo python3 hoaxshell.py -s <your_ip> -cm
 ```  
-![image](https://user-images.githubusercontent.com/75489922/195611068-cc9230ee-8f60-454c-baca-7680fd5ee80a.png)
+![image](https://user-images.githubusercontent.com/75489922/195785804-7fa3da9b-a10f-4c72-895a-0648271e7ec6.png)
 
 
 ### Shell session over https using tunneling tools ([Ngrok](https://ngrok.com) / [LocalTunnel](https://localtunnel.me))
