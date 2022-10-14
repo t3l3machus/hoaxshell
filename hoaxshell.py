@@ -94,7 +94,7 @@ def exit_with_msg(msg):
 
 
 # Check if port is valid.
-if args.port:
+if args.port is not None:
 	if args.port < 1 or args.port > 65535:
 		exit_with_msg('Port number is not valid.')
 
