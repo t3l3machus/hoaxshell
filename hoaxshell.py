@@ -315,9 +315,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	command_pool = []
 	execution_verified = False
 	last_received = ''
-	verify = str(uuid.uuid4()).replace("-", "")[0:8]
-	get_cmd = str(uuid.uuid4()).replace("-", "")[0:8]
-	post_res = str(uuid.uuid4()).replace("-", "")[0:8]
+	verify = str(uuid.uuid4())[0:8]
+	get_cmd = str(uuid.uuid4())[0:8]
+	post_res = str(uuid.uuid4())[0:8]
 	hid = str(uuid.uuid4()).split("-")
 	header_id = f'X-{hid[0][0:4]}-{hid[1]}' if not args.Header else args.Header
 	SESSIONID = '-'.join([verify, get_cmd, post_res])
