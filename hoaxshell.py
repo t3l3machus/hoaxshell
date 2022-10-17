@@ -291,7 +291,8 @@ class Tunneling:
 					break
 
 				elif 'url=' in output:
-					output = output.split('url=https://')[-1]
+					#output = output.split('url=https://')[-1]
+					output = url = re.compile(r".*url=(http|https):\/\/(.*)").findall(output)[0][1]
 					return output
 
 		except Exception as ex:
