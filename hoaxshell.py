@@ -237,7 +237,7 @@ class Tunneling:
 
 		'''Initialization of Tunnel Process'''
 
-		localtunnel = ['lt', '-p', str(port)]
+		localtunnel = ['lt', '-p', str(port), '-l', '127.0.0.1']
 		ngrok = ['ngrok', 'http', str(port), '--log', 'stdout']
 
 		if args.ngrok:
