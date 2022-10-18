@@ -126,6 +126,7 @@ Some awesome people were kind enough to send me/publish PoC videos of executing 
 
 | AV Solution  | Date  | PoC  |
 |---|---|---|
+| SentinelOne | 2022-10-18 | https://twitter.com/i/status/1582137400880336896 |
 | Bitdefender  | 2022-10-15  | https://www.linkedin.com/posts/rohitjain-19_hoaxshell-cy83rr0h1t-penetrationtesting-activity-6987080745139765248-8cdT?utm_source=share&utm_medium=member_desktop  |
 | McAfee  | 2022-10-15  | https://twitter.com/i/status/1581605531365814273  |
 | Kaspersky | 2022-10-13 | https://www.youtube.com/watch?v=IyMH_eCC4Rk |
