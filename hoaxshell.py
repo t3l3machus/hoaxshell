@@ -214,8 +214,13 @@ def generateDNSPayload(enc_payload):
 	#starting DNS server
 	try:
 		DNSserver.start()
-	except OSError:
-		exit(f'\n[{FAILED}] - {BOLD}Port 53 seems to already be in use.{END}\n')
+	except OSError as error:
+		if error.errno == 98:
+			exit(f'\n[{FAILED}] - {BOLD}Port 53 seems to already be in use.{END}\n')  
+		elif error.errno == 13:
+			exit(f'\n[{FAILED}] - {BOLD}Permission denied. Try running as root (with sudo).{END}\n')
+		else:
+			exit(f'\n[{FAILED}] - {BOLD}Error starting DNS server.{END}\n')
 
 	#Payload if both TCP and UDP servers are running
 	if not (args.tcp and args.udp):
