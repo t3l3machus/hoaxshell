@@ -220,7 +220,7 @@ def generateDNSPayload(enc_payload):
 		elif error.errno == 13:
 			exit(f'\n[{FAILED}] - {BOLD}Permission denied. Try running as root (with sudo).{END}\n')
 		else:
-			exit(f'\n[{FAILED}] - {BOLD}Error starting DNS server.{END}\n')
+			exit(f'\n[{FAILED}] - {BOLD}{error}{END}\n')
 
 	#Payload if both TCP and UDP servers are running
 	if not (args.tcp and args.udp):
