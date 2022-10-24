@@ -224,14 +224,14 @@ def generateDNSPayload(enc_payload):
 
 	#Payload if both TCP and UDP servers are running
 	if not (args.tcp and args.udp):
-		DnsPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r') if not args.tcp else open(
-							f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r')
+		DnsPayload = open(f'{cwd}/payload_templates/payload_dns_udp.ps1', 'r') if not args.tcp else open(
+							f'{cwd}/payload_templates/payload_dns_tcp.ps1', 'r')
 
 		payload = DnsPayload.read().strip()
 		DnsPayload.close()
 	else:
-		TcpPayload = open(f'{cwd}/payload_templates/https_payload_dns_tcp.ps1', 'r').read().strip()
-		UdpPayload = open(f'{cwd}/payload_templates/https_payload_dns_udp.ps1', 'r').read().strip()
+		TcpPayload = open(f'{cwd}/payload_templates/payload_dns_tcp.ps1', 'r').read().strip()
+		UdpPayload = open(f'{cwd}/payload_templates/payload_dns_udp.ps1', 'r').read().strip()
 
 		payload = f'{END}[{INFO}] Payload for {MAIN}TCP{END} baesd DNS Lookup\n{PLOAD}{TcpPayload}{END}\n{END}[{INFO}] Payload for {MAIN}UDP{END} baesd DNS Lookup\n{PLOAD}{UdpPayload}{END}'
 
