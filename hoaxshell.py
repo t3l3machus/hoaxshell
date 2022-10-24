@@ -522,6 +522,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	
 	def cmd_output_interpreter(self, output, constraint_mode = False):
 	
+		global prompt
 		
 		try:
 			
@@ -646,6 +647,8 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 
 	def do_POST(self):
+
+		global prompt
 		
 		timestamp = int(datetime.now().timestamp())
 		Hoaxshell.last_received = timestamp
