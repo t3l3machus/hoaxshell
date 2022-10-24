@@ -920,7 +920,7 @@ def main():
 				print(f'{PLOAD}{payload}{END}')
 
 			else:
-				paylaod = "powershell -e "+enc_payload
+				payload = "powershell -e "+enc_payload
 				print(f'{PLOAD}{payload}{END}')
 
 
