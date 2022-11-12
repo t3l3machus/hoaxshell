@@ -4,7 +4,7 @@
 # https://github.com/t3l3machus
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import ssl, sys, argparse, base64, readline, uuid, re
+import ssl, sys, argparse, base64, gnureadline, uuid, re
 from os import system, path
 from warnings import filterwarnings
 from datetime import date, datetime
@@ -228,7 +228,7 @@ t_process = None
 def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 
 	if Hoaxshell.rst_promt_required or force_rst:
-		sys.stdout.write(prefix + prompt + readline.get_line_buffer())
+		sys.stdout.write(prefix + prompt + gnureadline.get_line_buffer())
 		Hoaxshell.rst_promt_required = False
 
 
