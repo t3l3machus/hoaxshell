@@ -1,13 +1,13 @@
 # hoaxshell
-[![Python](https://img.shields.io/badge/python-%E2%89%A5%203.6-yellow.svg)](https://www.python.org/) 
-<img src="https://img.shields.io/badge/powershell-%E2%89%A5%20v3.0-blue">
-[![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
-[![License](https://img.shields.io/badge/license-BSD-red.svg)](https://github.com/t3l3machus/hoaxshell/blob/main/LICENSE.md)
+[![Python](https://img.shields.io/badge/Python-%E2%89%A5%203.6-yellow.svg)](https://www.python.org/) 
+<img src="https://img.shields.io/badge/PowerShell-%E2%89%A5%20v3.0-blue">
+<img src="https://img.shields.io/badge/Developed%20on-kali%20linux-blueviolet">
+[![License](https://img.shields.io/badge/License-BSD-red.svg)](https://github.com/t3l3machus/hoaxshell/blob/main/LICENSE.md)
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 
- <h3> ⚡ Check out the evolution of this tool --> https://github.com/t3l3machus/Villain ⚡</h3>
+ ### ⚡ Check out the evolution of this tool -> [github.com/t3l3machus/Villain](https://github.com/t3l3machus/Villain) ⚡
 
-:warning: **Update**: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You can of course generate payloads and obfuscate them manually or by using automated tools. I will try to enhance the auto-obfuscate `-o (--obfuscate)` function in the future. 
+#### :warning: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You need to obfuscate the generated payload in order to use. Check out this video on how to obfuscate manually and bypass MS Defender -> [youtube.com/watch?v=iElVfagdCD4](https://www.youtube.com/watch?v=iElVfagdCD4)
 
 ## Purpose
 hoaxshell is a Windows reverse shell payload generator and handler that abuses the http(s) protocol to establish a beacon-like reverse shell, based on the following concept:  
