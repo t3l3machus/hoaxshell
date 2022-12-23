@@ -182,7 +182,7 @@ def promptHelpMsg():
 
 
 def encodePayload(payload):
-	enc_payload = "powershell -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
+	enc_payload = "powershell.exe -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
 	print(f'{PLOAD}{enc_payload}{END}')
 
 
