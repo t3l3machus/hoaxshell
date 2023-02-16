@@ -1,0 +1,2 @@
+gnureadline==8.1.2
+ipython==8.10.0
