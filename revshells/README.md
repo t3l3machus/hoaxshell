@@ -10,7 +10,7 @@ A standalone version of HoaxShell's listener, mainly created for integration wit
 
 ## Installation
 ```
-sudo pip3 install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 **Important**: The `gnureadline` module is not meant for Windows and it will naturally cause an error if you try to install with pip. Remove `gnureadline` from the requirements.txt to install on Windows.
 
@@ -23,7 +23,7 @@ You can run the listener by executing `hoaxshell-listener.py` or directly invoki
 python3 hoaxshell-listener.py -t <payload-type>
 
 # Invoke from repository
-python3 -c "$(curl -s https://raw.githubusercontent.com/t3l3machus/hoaxshell-RevShells/main/hoaxshell-listener.py)" -t <payload-type>
+python3 -c "$(curl -s https://raw.githubusercontent.com/t3l3machus/hoaxshell/main/revshells/hoaxshell-listener.py)" -t <payload type> -p <port> [-c /your/cert.pem -k /your/key.pem>] 
 ```
 
 The listener is designed to accept any incoming connection bearing a session id in the form of `eb6a44aa-8acc1e56-629ea455`.  
