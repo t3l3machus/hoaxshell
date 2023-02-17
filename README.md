@@ -5,11 +5,11 @@
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](https://github.com/t3l3machus/hoaxshell/blob/main/LICENSE.md)
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 
- ### ⚡ Check out the evolution of this tool -> [github.com/t3l3machus/Villain](https://github.com/t3l3machus/Villain) ⚡
+#### ⚡ The newest version of this project is the [HoaxShell standalone listener](https://github.com/t3l3machus/hoaxshell/tree/main/revshells) which comes with refreshed payload templates. Wou can also use it directly from https://revshells.com (make sure to choose hoaxshell as the listener).
 
-#### :warning: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You need to obfuscate the generated payload in order to use. Check out this video on how to obfuscate manually and bypass MS Defender:
+:warning: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You need to obfuscate the generated payload in order to use. Check out this video on how to obfuscate manually and bypass MS Defender:
  - Example with Hoaxshell -> [youtube.com/watch?v=iElVfagdCD4](https://www.youtube.com/watch?v=iElVfagdCD4)
- - Example with common powershell r-shell -> [youtube.com/watch?v=3HddKylkRzM](https://www.youtube.com/watch?v=3HddKylkRzM)
+ - Example with common powershell revshell templates -> [youtube.com/watch?v=3HddKylkRzM](https://www.youtube.com/watch?v=3HddKylkRzM)
 
 ## Purpose
 hoaxshell is a Windows reverse shell payload generator and handler that abuses the http(s) protocol to establish a beacon-like reverse shell, based on the following concept:  
