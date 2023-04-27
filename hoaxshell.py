@@ -16,6 +16,7 @@ from subprocess import check_output, Popen, PIPE
 from string import ascii_uppercase, ascii_lowercase
 from platform import system as get_system_type
 from random import randint
+from pyperclip import copy as copy2cb
 
 filterwarnings("ignore", category = DeprecationWarning)
 
@@ -184,7 +185,7 @@ def promptHelpMsg():
 
 def encodePayload(payload):
 	enc_payload = "powershell -e " + base64.b64encode(payload.encode('utf16')[2:]).decode()
-	print(f'{PLOAD}{enc_payload}{END}')
+	return enc_payload
 
 
 
@@ -751,8 +752,17 @@ def main():
 					
 					payload = payload.replace(var, f'${obf}')
 			
+			if not args.raw_payload:
+				payload = encodePayload(payload)
+
+			print(f'{PLOAD}{payload}{END}')
 			
-			encodePayload(payload) if not args.raw_payload else print(f'{PLOAD}{payload}{END}')
+			# Copy payload to clipboard
+			try:
+				copy2cb(payload)
+				print(f'{ORANGE}Copied to clipboard!{END}')
+			except:
+				pass
 
 			print(f'[{INFO}] Tunneling [{BOLD}{ORANGE}ON{END}]') if tunneling else chill()
 			
@@ -782,7 +792,8 @@ def main():
 					system('clear')
 
 				elif user_input_lower in ['payload']:
-					encodePayload(payload)
+					p = encodePayload(payload)
+					print(f'{PLOAD}{p}{END}')
 
 				elif user_input_lower in ['rawpayload']:
 					print(f'{PLOAD}{payload}{END}')
