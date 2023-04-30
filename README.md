@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](https://github.com/t3l3machus/hoaxshell/blob/main/LICENSE.md)
 <img src="https://img.shields.io/badge/Maintained%3F-Yes-96c40f">
 
-#### ⚡ The newest version of this project is the [HoaxShell standalone listener](https://github.com/t3l3machus/hoaxshell/tree/main/revshells) which comes with refreshed payload templates. Wou can also use it directly from https://revshells.com (make sure to choose hoaxshell as the listener).
+#### ⚡ The newest version of this project is the [HoaxShell standalone listener](https://github.com/t3l3machus/hoaxshell/tree/main/revshells) which comes with refreshed payload templates. You can also use it directly from https://revshells.com (make sure to choose hoaxshell as the listener).
 
 :warning: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You need to obfuscate the generated payload in order to use. Check out this video on how to obfuscate manually and bypass MS Defender:
  - Example with Hoaxshell -> [youtube.com/watch?v=iElVfagdCD4](https://www.youtube.com/watch?v=iElVfagdCD4)
