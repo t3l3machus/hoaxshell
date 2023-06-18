@@ -31,7 +31,7 @@ You can keep the session id's included in the templates or alter them to differe
 
 ## Payload Templates
 1. Start the listener with the `--type [-t]` set to one of the available payload types below:  
-`cmd-curl|ps-iex|ps-iex-cm|ps-outfile|ps-outfile-cm`
+`cmd-curl | ps-iex | ps-iex-cm | ps-outfile | ps-outfile-cm`
 2. Grab the equivalent template and adjust the IP and PORT values. if you change the default port 8080/443 you need to parse it to the listener with `-p`.
 3. Execute payload on the target machine.
 
