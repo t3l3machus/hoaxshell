@@ -3,7 +3,7 @@
 # Author: Panagiotis Chartas (t3l3machus)
 # https://github.com/t3l3machus
 #
-# A standalone version of HoaxShell's listener, mainly created for integration with RevShells.com.
+# A standalone version of HoaxShell's listener, mainly created for integration with RevShells.com
  
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -202,7 +202,58 @@ def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 
 
 
-# -------------- Hoaxshell Server -------------- #
+class Session_Defender:
+
+	is_active = True
+	windows_dangerous_commands = ["powershell.exe", "powershell", "cmd.exe", "cmd", "curl", "wget", "telnet"]		
+	interpreters = ['python', 'python3', 'php', 'ruby', 'irb', 'perl', 'jshell', 'node', 'ghci']
+
+	@staticmethod
+	def inspect_command(os, cmd):
+
+		# Check if command includes unclosed single/double quotes or backticks OR id ends with backslash
+		if Session_Defender.has_unclosed_quotes_or_backticks(cmd):
+			return True
+
+		cmd = cmd.strip().lower()
+
+		# Check for common commands and binaries that start interactive sessions within shells OR prompt the user for input		
+		if cmd in (Session_Defender.windows_dangerous_commands + Session_Defender.interpreters):
+			return True
+
+		return False
+
+
+	@staticmethod
+	def has_unclosed_quotes_or_backticks(cmd):
+
+		stack = []
+
+		for i, c in enumerate(cmd):
+			if c in ["'", '"', "`"]:
+				if not stack or stack[-1] != c:
+					stack.append(c)
+				else:
+					stack.pop()
+			elif c == "\\" and i < len(cmd) - 1:
+				i += 1
+
+		return len(stack) > 0
+
+
+	@staticmethod
+	def ends_with_backslash(cmd):
+		return True if cmd.endswith('\\') else False
+
+
+	@staticmethod
+	def print_warning():
+		print(f'[{WARN}] Dangerous input detected. This command may break the shell session. If you want to execute it anyway, disable the Session Defender by running "cmdinspector".')
+		rst_prompt(prompt = prompt)
+
+
+
+# -------------- HoaxShell Server -------------- #
 class Hoaxshell(BaseHTTPRequestHandler):
 
 	session_established = False
@@ -490,20 +541,35 @@ def main():
 			if Hoaxshell.prompt_ready:
 
 				user_input = input(prompt).strip()
+				user_input_lower = user_input.lower()
 
-				if user_input.lower() in ['clear']:
+				if user_input_lower in ['clear']:
 					system('clear')
 
-				elif user_input.lower() in ['exit', 'quit', 'q']:
+				elif user_input_lower in ['exit', 'quit', 'q']:
 					Hoaxshell.terminate()
 
 				elif user_input == '':
 					rst_prompt(force_rst = True, prompt = '\r')
 
+				elif user_input_lower == 'cmdinspector':
+					Session_Defender.is_active = not Session_Defender.is_active
+					print(f'Session Defender is turned {"off" if not Session_Defender.is_active else "on"}.')
+
 				else:
 
 					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
-						
+
+						# Invoke Session Defender to inspect the command for dangerous input
+						dangerous_input_detected = False
+
+						if Session_Defender.is_active:
+							dangerous_input_detected = Session_Defender.inspect_command(None, user_input)
+
+						if dangerous_input_detected:
+							Session_Defender.print_warning()
+							continue
+
 						if user_input == "pwd" and payload_type not in ['cmd-curl']:
 							user_input = "split-path $pwd'\\0x00'"
 						
