@@ -16,7 +16,7 @@ hoaxshell is a Windows reverse shell payload generator and handler that abuses t
 
 ![image](https://user-images.githubusercontent.com/75489922/197529603-1c9238ea-af14-41f7-8834-dd37ad77e809.png)
 
-This c2 concept (which could be implemented by using protocols other than http or pre-installed exes) can be used to establish sessions that promote the illusion of having an actuall shell, but are far from an actual pty.
+This c2 concept (which could be implemented by using protocols other than http or pre-installed exes) can be used to establish sessions that promote the illusion of having a shell, but are far from an actual pty.
 
 HoaxShell did well against AV software (check [AV bypass PoCs table](#AV-Bypass-PoCs) for more info). Although it is now generally detected, it is easy to obfuscate the generated payload(s) using automated tools or manually.
 
