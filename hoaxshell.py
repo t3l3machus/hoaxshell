@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/env python3
 #
 # Author: Panagiotis Chartas (t3l3machus)
 # https://github.com/t3l3machus
