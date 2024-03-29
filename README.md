@@ -10,7 +10,7 @@
 :warning: As of 2022-10-18, hoaxshell is detected by AMSI ([malware-encyclopedia](https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?name=VirTool%3aPowerShell%2fXoashell.A&threatid=2147833654)). You need to obfuscate the generated payload in order to use. Check out this video on how to obfuscate manually and bypass MS Defender:
  - Example with Hoaxshell -> [youtube.com/watch?v=iElVfagdCD4](https://www.youtube.com/watch?v=iElVfagdCD4)
  - Example with common powershell revshell templates -> [youtube.com/watch?v=3HddKylkRzM](https://www.youtube.com/watch?v=3HddKylkRzM)
-
+With proper obfuscation the http payload is currently working on fully patched version of win 11 with windows defender up and running as of , 29th March 2024 18:20 IST 
 ## Purpose
 hoaxshell is a Windows reverse shell payload generator and handler that abuses the http(s) protocol to establish a beacon-like reverse shell, based on the following concept:  
 
