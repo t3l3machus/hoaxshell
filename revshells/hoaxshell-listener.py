@@ -24,7 +24,7 @@ filterwarnings("ignore", category = DeprecationWarning)
 if get_system_type() == 'Linux':
 	import gnureadline as global_readline
 else:
-	import readline as global_readline
+	from pyreadline import Readline as global_readline
 
 
 ''' Colors '''
