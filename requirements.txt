@@ -1,3 +1,0 @@
-gnureadline==8.1.2
-ipython==8.4.0
-pyperclip==1.8.2
