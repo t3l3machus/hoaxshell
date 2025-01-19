@@ -516,14 +516,9 @@ def main():
 			exit(f'\n[{FAILED}] Port {server_port} seems to already be in use.\n')
 
 		if ssl_support:
-			httpd.socket = ssl.wrap_socket (
-				httpd.socket,
-				keyfile = args.keyfile ,
-				certfile = args.certfile ,
-				server_side = True,
-				ssl_version=ssl.PROTOCOL_TLS
-			)
-
+			context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+			context.load_cert_chain(certfile = args.certfile, keyfile = args.keyfile)
+			httpd.socket = context.wrap_socket(sock = httpd.socket, server_side= True)
 
 		port = f':{server_port}' if server_port != 443 else ''
 
