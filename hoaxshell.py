@@ -693,9 +693,12 @@ def main():
 			exit(f'\n[{FAILED}] - {BOLD}Port {server_port} seems to already be in use.{END}\n')
 
 		if ssl_support:
-			context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-			context.load_cert_chain(certfile = args.certfile, keyfile = args.keyfile)
-			httpd.socket = context.wrap_socket(sock = httpd.socket, server_side= True)
+			try:
+				context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+				context.load_cert_chain(certfile = args.certfile, keyfile = args.keyfile)
+				httpd.socket = context.wrap_socket(sock = httpd.socket, server_side= True)
+			except FileNotFoundError:
+				exit_with_msg('Certificate / Key file not found. Check your input and try again.')
 
 		port = f':{server_port}' if server_port != 443 else ''
 
